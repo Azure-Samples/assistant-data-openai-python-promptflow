@@ -28,6 +28,11 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
     return parser
 
 
+##################################
+# Resource configuration classes #
+##################################
+
+
 class AzureAIHubConfig(BaseModel):
     subscription_id: str
     resource_group_name: str
@@ -56,6 +61,50 @@ class AzureOpenAIConfig(BaseModel):
 class AzureOpenAIDeploymentConfig(BaseModel):
     name: str
     model: str
+
+
+def parse_config(config):
+    """Parse the config file."""
+    # Basic config check
+    if config.ai is None:
+        raise ValueError("No AI resources in config.")
+
+    ai_hub = AzureAIHubConfig(
+        subscription_id=config.ai.subscription_id,
+        resource_group_name=config.ai.resource_group_name,
+        hub_name=config.ai.hub_name,
+    )
+    ai_project = AzureAIProjectConfig(
+        subscription_id=config.ai.subscription_id,
+        resource_group_name=config.ai.resource_group_name,
+        hub_name=config.ai.hub_name,
+        project_name=config.ai.project_name,
+    )
+
+    if config.search is None:
+        raise ValueError("No AI Search resources in config.")
+
+    ai_search = AzureAISearchConfig(
+        subscription_id=config.search.subscription_id,
+        resource_group_name=config.search.resource_group_name,
+        search_resource_name=config.search.search_resource_name,
+    )
+
+    if config.aoai is None:
+        raise ValueError("No Azure OpenAI resources in config.")
+
+    aoai = AzureOpenAIConfig(
+        subscription_id=config.aoai.subscription_id,
+        resource_group_name=config.aoai.resource_group_name,
+        aoai_resource_name=config.aoai.aoai_resource_name,
+    )
+
+    return ai_hub, ai_project, ai_search, aoai
+
+
+#################################
+# Resource management functions #
+#################################
 
 
 def check_ai_hub_exists(ai_hub: AzureAIHubConfig) -> bool:
@@ -117,45 +166,6 @@ def check_aoai_exists(aoai: AzureOpenAIConfig) -> bool:
         return True
     except Exception as e:
         return False
-
-
-def parse_config(config):
-    """Parse the config file."""
-    # Basic config check
-    if config.ai is None:
-        raise ValueError("No AI resources in config.")
-
-    ai_hub = AzureAIHubConfig(
-        subscription_id=config.ai.subscription_id,
-        resource_group_name=config.ai.resource_group_name,
-        hub_name=config.ai.hub_name,
-    )
-    ai_project = AzureAIProjectConfig(
-        subscription_id=config.ai.subscription_id,
-        resource_group_name=config.ai.resource_group_name,
-        hub_name=config.ai.hub_name,
-        project_name=config.ai.project_name,
-    )
-
-    if config.search is None:
-        raise ValueError("No AI Search resources in config.")
-
-    ai_search = AzureAISearchConfig(
-        subscription_id=config.search.subscription_id,
-        resource_group_name=config.search.resource_group_name,
-        search_resource_name=config.search.search_resource_name,
-    )
-
-    if config.aoai is None:
-        raise ValueError("No Azure OpenAI resources in config.")
-
-    aoai = AzureOpenAIConfig(
-        subscription_id=config.aoai.subscription_id,
-        resource_group_name=config.aoai.resource_group_name,
-        aoai_resource_name=config.aoai.aoai_resource_name,
-    )
-
-    return ai_hub, ai_project, ai_search, aoai
 
 
 def build_provision_plan(config):
