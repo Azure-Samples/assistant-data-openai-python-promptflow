@@ -1,0 +1,23 @@
+ai:
+  subscription_id: "your-subscription-id"
+  resource_group_name: "your_resource_group"
+  hub_name: "hub_name"
+  project_name: "project_name"
+  region: "eastus"
+
+search:
+  subscription_id: "your-subscription-id"
+  resource_group_name: "your_resource_group"
+  search_resource_name: "search_name"
+  region: "eastus"
+
+aoai:
+  subscription_id: "your-subscription-id"
+  resource_group_name: "your_resource_group"
+  aoai_resource_name: "my-new-aoai"
+  region: "eastus"
+  deployments:
+    - name: "gpt-35-turbo"
+      model: "gpt-3.5-turbo"
+    - name: "text-embedding-ada-002"
+      model: "text-embedding-ada-002"
