@@ -167,6 +167,23 @@ def check_aoai_exists(aoai: AzureOpenAIConfig) -> bool:
     except Exception as e:
         return False
 
+def check_aoai_deployment_exists(aoai: AzureOpenAIConfig, deployment: AzureOpenAIDeploymentConfig) -> bool:
+    client = CognitiveServicesManagementClient(
+        credential=DefaultAzureCredential(), subscription_id=aoai.subscription_id
+    )
+
+    try:
+        account = client.accounts.get(
+            resource_group_name=aoai.resource_group_name,
+            account_name=aoai.aoai_resource_name,
+        )
+        deployment = account.deployments.get(
+            deployment_name=deployment.name
+        )
+        return True
+    except Exception as e:
+        return False
+
 
 def build_provision_plan(config):
     """Depending on values in config, creates a provisioning plan."""
@@ -202,11 +219,19 @@ def build_provision_plan(config):
     # AOAI resource
     if check_aoai_exists(aoai):
         logging.info(f"Azure OpenAI {aoai.aoai_resource_name} already exists.")
+        for deployment in config.aoai.deployments:
+            if not check_aoai_deployment_exists(aoai, deployment):
+                logging.info(
+                    f"Azure OpenAI deployment {deployment.name} does not exist. Adding to provisioning plan..."
+                )
+                plan.append(f"create_aoai_deployment({aoai}, {deployment})")
     else:
         logging.info(
             f"Azure OpenAI {aoai.aoai_resource_name} does not exist. Adding to provisioning plan..."
         )
         plan.append(f"create_aoai({aoai})")
+        for deployment in config.aoai.deployments:
+            plan.append(f"create_aoai_deployment({aoai}, {deployment})")
 
     return plan
 
