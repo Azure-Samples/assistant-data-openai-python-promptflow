@@ -13,6 +13,8 @@ from azure.identity import DefaultAzureCredential
 from azure.mgmt.search import SearchManagementClient
 from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
 
+from typing import List, Callable, Dict
+
 
 def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentParser:
     if parser is None:
@@ -167,7 +169,10 @@ def check_aoai_exists(aoai: AzureOpenAIConfig) -> bool:
     except Exception as e:
         return False
 
-def check_aoai_deployment_exists(aoai: AzureOpenAIConfig, deployment: AzureOpenAIDeploymentConfig) -> bool:
+
+def check_aoai_deployment_exists(
+    aoai: AzureOpenAIConfig, deployment: AzureOpenAIDeploymentConfig
+) -> bool:
     client = CognitiveServicesManagementClient(
         credential=DefaultAzureCredential(), subscription_id=aoai.subscription_id
     )
@@ -177,18 +182,68 @@ def check_aoai_deployment_exists(aoai: AzureOpenAIConfig, deployment: AzureOpenA
             resource_group_name=aoai.resource_group_name,
             account_name=aoai.aoai_resource_name,
         )
-        deployment = account.deployments.get(
-            deployment_name=deployment.name
-        )
+        deployment = account.deployments.get(deployment_name=deployment.name)
         return True
     except Exception as e:
         return False
 
 
-def build_provision_plan(config):
+###############################
+# Resource Creation Functions #
+###############################
+
+
+def create_ai_hub(ai_hub: AzureAIHubConfig):
+    logging.info(f"Creating AI Hub {ai_hub.hub_name}...")
+
+
+def create_ai_project(ai_project: AzureAIProjectConfig):
+    logging.info(f"Creating AI Project {ai_project.project_name}...")
+
+
+def create_ai_search(ai_search: AzureAISearchConfig):
+    logging.info(f"Creating AI Search {ai_search.search_resource_name}...")
+
+
+def create_aoai(aoai: AzureOpenAIConfig):
+    logging.info(f"Creating Azure OpenAI {aoai.aoai_resource_name}...")
+
+
+def create_aoai_deployment(
+    aoai: AzureOpenAIConfig, deployment: AzureOpenAIDeploymentConfig
+):
+    logging.info(f"Creating Azure OpenAI deployment {deployment.name}...")
+
+
+#####################
+# Provisioning Plan #
+#####################
+
+
+class ProvioningPlanStep(BaseModel):
+    provisioning_function: Callable
+    args: List
+    kwargs: Dict
+
+    @classmethod
+    def from_args(cls, function: Callable, *args: List, **kwargs: Dict):
+        return cls(provisioning_function=function, args=args, kwargs=kwargs)
+
+    def run(self):
+        self.provisioning_function(*self.args, **self.kwargs)
+
+    def __str__(self) -> str:
+        return f"Step: {self.provisioning_function.__name__}({self.args})"
+
+
+class ProvisioningPlan(BaseModel):
+    steps: List[ProvioningPlanStep]
+
+
+def build_provision_plan(config) -> ProvisioningPlan:
     """Depending on values in config, creates a provisioning plan."""
     ai_hub, ai_project, ai_search, aoai = parse_config(config)
-    plan = []
+    steps = []
 
     # AI hub and project checks
     if check_ai_hub_exists(ai_hub):
@@ -199,13 +254,13 @@ def build_provision_plan(config):
             logging.info(
                 f"AI Project {ai_project.project_name} does not exist. Adding to provisioning plan..."
             )
-            plan.append(f"create_project({ai_project})")
+            steps.append(ProvioningPlanStep.from_args(create_ai_project, ai_project))
     else:
         logging.info(
             f"AI Hub {ai_hub.hub_name} does not exist. Adding to provisioning plan..."
         )
-        plan.append(f"create_hub({ai_hub})")
-        plan.append(f"create_project({ai_project})")
+        steps.append(ProvioningPlanStep.from_args(create_ai_hub, ai_hub))
+        steps.append(ProvioningPlanStep.from_args(create_ai_project, ai_project))
 
     # Search resource
     if check_ai_search_exists(ai_search):
@@ -214,7 +269,7 @@ def build_provision_plan(config):
         logging.info(
             f"AI Search {ai_search.search_resource_name} does not exist. Adding to provisioning plan..."
         )
-        plan.append(f"create_search({ai_search})")
+        steps.append(ProvioningPlanStep.from_args(create_ai_search, ai_search))
 
     # AOAI resource
     if check_aoai_exists(aoai):
@@ -224,16 +279,22 @@ def build_provision_plan(config):
                 logging.info(
                     f"Azure OpenAI deployment {deployment.name} does not exist. Adding to provisioning plan..."
                 )
-                plan.append(f"create_aoai_deployment({aoai}, {deployment})")
+                steps.append(
+                    ProvioningPlanStep.from_args(
+                        create_aoai_deployment, aoai, deployment
+                    )
+                )
     else:
         logging.info(
             f"Azure OpenAI {aoai.aoai_resource_name} does not exist. Adding to provisioning plan..."
         )
-        plan.append(f"create_aoai({aoai})")
+        steps.append(ProvioningPlanStep.from_args(create_aoai, aoai))
         for deployment in config.aoai.deployments:
-            plan.append(f"create_aoai_deployment({aoai}, {deployment})")
+            steps.append(
+                ProvioningPlanStep.from_args(create_aoai_deployment, aoai, deployment)
+            )
 
-    return plan
+    return ProvisioningPlan(steps=steps)
 
 
 def main():
@@ -245,8 +306,11 @@ def main():
     provision_plan = build_provision_plan(config)
 
     print("Here's the resulting provisioning plan:")
-    for step in provision_plan:
-        print(step)
+    for step in provision_plan.steps:
+        print(str(step))
+
+    for step in provision_plan.steps:
+        step.run()
 
 
 if __name__ == "__main__":
