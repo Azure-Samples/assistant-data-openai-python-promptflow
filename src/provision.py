@@ -275,13 +275,14 @@ def build_provision_plan(config) -> ProvisioningPlan:
     if check_aoai_exists(aoai):
         logging.info(f"Azure OpenAI {aoai.aoai_resource_name} already exists.")
         for deployment in config.aoai.deployments:
-            if not check_aoai_deployment_exists(aoai, deployment):
+            deployment_config = AzureOpenAIDeploymentConfig(**deployment)
+            if not check_aoai_deployment_exists(aoai, deployment_config):
                 logging.info(
                     f"Azure OpenAI deployment {deployment.name} does not exist. Adding to provisioning plan..."
                 )
                 steps.append(
                     ProvioningPlanStep.from_args(
-                        create_aoai_deployment, aoai, deployment
+                        create_aoai_deployment, aoai, deployment_config
                     )
                 )
     else:
