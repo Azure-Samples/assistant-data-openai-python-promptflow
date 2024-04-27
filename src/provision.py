@@ -13,6 +13,9 @@ from azure.identity import DefaultAzureCredential
 from azure.mgmt.search import SearchManagementClient
 from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
 
+# from azure.ai.ml.entities import Project,Hub
+from azure.ai.ml.entities import WorkspaceHub, Workspace
+
 from typing import List, Callable, Dict
 
 
@@ -195,24 +198,94 @@ def check_aoai_deployment_exists(
 
 def create_ai_hub(ai_hub: AzureAIHubConfig):
     logging.info(f"Creating AI Hub {ai_hub.hub_name}...")
+    ml_client = MLClient(
+        subscription_id=ai_hub.subscription_id,
+        resource_group_name=ai_hub.resource_group_name,
+        credential=DefaultAzureCredential(),
+    )
+
+    hub = WorkspaceHub(
+        name=ai_hub.hub_name,
+        location="westus",
+        resource_group=ai_hub.resource_group_name,
+    )
+    response = ml_client.workspaces.create(hub).result()
+
+    return response
 
 
 def create_ai_project(ai_project: AzureAIProjectConfig):
     logging.info(f"Creating AI Project {ai_project.project_name}...")
+    ml_client = MLClient(
+        subscription_id=ai_project.subscription_id,
+        resource_group_name=ai_project.resource_group_name,
+        credential=DefaultAzureCredential(),
+    )
+
+    hub = ml_client.workspaces.get(ai_project.hub_name)
+
+    project = Workspace(name=ai_project.project_name, workspace_hub=hub)
+    response = ml_client.workspaces.create(project).result()
+
+    return response
 
 
 def create_ai_search(ai_search: AzureAISearchConfig):
     logging.info(f"Creating AI Search {ai_search.search_resource_name}...")
+    client = SearchManagementClient(
+        credential=DefaultAzureCredential(), subscription_id=ai_search.subscription_id
+    )
+    search = client.services.create_or_update(
+        resource_group_name=ai_search.resource_group_name,
+        search_service_name=ai_search.search_resource_name,
+        service={
+            "location": "westus",
+            # "properties": {"hostingMode": "default", "partitionCount": 1, "replicaCount": 3},
+            "sku": {"name": "standard"},
+            # "tags": {"app-name": "My e-commerce app"},
+        },
+    ).result()
+    return search
 
 
 def create_aoai(aoai: AzureOpenAIConfig):
     logging.info(f"Creating Azure OpenAI {aoai.aoai_resource_name}...")
+    client = CognitiveServicesManagementClient(
+        credential=DefaultAzureCredential(), subscription_id=aoai.subscription_id
+    )
+    account = client.accounts.begin_create(
+        resource_group_name=aoai.resource_group_name,
+        account_name=aoai.aoai_resource_name,
+        account={
+            "sku": {"name": "S0"},
+            "kind": "CognitiveServices",
+            "location": "West US",
+        },
+    ).result()
+
+    return account
 
 
 def create_aoai_deployment(
     aoai: AzureOpenAIConfig, deployment: AzureOpenAIDeploymentConfig
 ):
     logging.info(f"Creating Azure OpenAI deployment {deployment.name}...")
+    client = CognitiveServicesManagementClient(
+        credential=DefaultAzureCredential(), subscription_id=aoai.subscription_id
+    )
+    account = client.accounts.get(
+        resource_group_name=aoai.resource_group_name,
+        account_name=aoai.aoai_resource_name,
+    )
+    deployment = account.deployments.begin_create(
+        deployment_name=deployment.name,
+        deployment={
+            "properties": {"model": {"format": "OpenAI", "name": deployment.model}},
+            "sku": {"capacity": 300, "name": "Provisioned"},
+        },
+    ).result()
+
+    return deployment
 
 
 #####################
@@ -310,8 +383,8 @@ def main():
     for step in provision_plan.steps:
         print(str(step))
 
-    for step in provision_plan.steps:
-        step.run()
+    # for step in provision_plan.steps:
+    #     step.run()
 
 
 if __name__ == "__main__":
