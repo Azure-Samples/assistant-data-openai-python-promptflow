@@ -28,7 +28,7 @@ nodes:
   type: python
   source:
     type: code
-    path: pf_dag_orchestrator.py
+    path: dag_entry.py
   inputs:
     # promptflow 'chat' contract
     chat_history: ${inputs.chat_history}
