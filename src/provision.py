@@ -14,7 +14,7 @@ from azure.mgmt.search import SearchManagementClient
 from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
 
 # from azure.ai.ml.entities import Project,Hub
-from azure.ai.ml.entities import WorkspaceHub, Workspace
+from azure.ai.ml.entities import WorkspaceHub, Workspace, WorkspaceConnection
 
 from typing import List, Callable, Dict
 
@@ -42,6 +42,7 @@ class AzureAIHubConfig(BaseModel):
     subscription_id: str
     resource_group_name: str
     hub_name: str
+    region: str
 
 
 class AzureAIProjectConfig(BaseModel):
@@ -49,18 +50,21 @@ class AzureAIProjectConfig(BaseModel):
     resource_group_name: str
     hub_name: str
     project_name: str
+    region: str
 
 
 class AzureAISearchConfig(BaseModel):
     subscription_id: str
     resource_group_name: str
     search_resource_name: str
+    region: str
 
 
 class AzureOpenAIConfig(BaseModel):
     subscription_id: str
     resource_group_name: str
     aoai_resource_name: str
+    region: str
 
 
 class AzureOpenAIDeploymentConfig(BaseModel):
@@ -153,6 +157,7 @@ def check_ai_search_exists(ai_search: AzureAISearchConfig) -> bool:
             resource_group_name=ai_search.resource_group_name,
             search_service_name=ai_search.search_resource_name,
         )
+        print(response)
         return True
     except Exception as e:
         return False
@@ -191,6 +196,25 @@ def check_aoai_deployment_exists(
         return False
 
 
+def check_connection(ai_hub: AzureAIHubConfig, ai_search: AzureAISearchConfig):
+    """Check if the connection between AI Hub and AI Search exists."""
+    client = SearchManagementClient(
+        credential=DefaultAzureCredential(), subscription_id=ai_search.subscription_id
+    )
+
+    try:
+        response = client.services.get(
+            resource_group_name=ai_search.resource_group_name,
+            search_service_name=ai_search.search_resource_name,
+        )
+        return True
+    except Exception as e:
+        return False
+
+    connection = WorkspaceConnection(target=ai)
+    pass
+
+
 ###############################
 # Resource Creation Functions #
 ###############################
@@ -209,7 +233,7 @@ def create_ai_hub(ai_hub: AzureAIHubConfig):
         location="westus",
         resource_group=ai_hub.resource_group_name,
     )
-    response = ml_client.workspaces.create(hub).result()
+    response = ml_client.workspaces.begin_create(hub).result()
 
     return response
 
@@ -224,8 +248,13 @@ def create_ai_project(ai_project: AzureAIProjectConfig):
 
     hub = ml_client.workspaces.get(ai_project.hub_name)
 
-    project = Workspace(name=ai_project.project_name, workspace_hub=hub)
-    response = ml_client.workspaces.create(project).result()
+    project = Workspace(
+        name=ai_project.project_name,
+        workspace_hub=hub.id,
+        location=hub.location,
+        resource_group=hub.resource_group,
+    )
+    response = ml_client.workspaces.begin_create(project).result()
 
     return response
 
@@ -235,11 +264,11 @@ def create_ai_search(ai_search: AzureAISearchConfig):
     client = SearchManagementClient(
         credential=DefaultAzureCredential(), subscription_id=ai_search.subscription_id
     )
-    search = client.services.create_or_update(
+    search = client.services.begin_create_or_update(
         resource_group_name=ai_search.resource_group_name,
         search_service_name=ai_search.search_resource_name,
         service={
-            "location": "westus",
+            "location": ai_search.region,
             # "properties": {"hostingMode": "default", "partitionCount": 1, "replicaCount": 3},
             "sku": {"name": "standard"},
             # "tags": {"app-name": "My e-commerce app"},
@@ -277,7 +306,7 @@ def create_aoai_deployment(
         resource_group_name=aoai.resource_group_name,
         account_name=aoai.aoai_resource_name,
     )
-    deployment = account.deployments.begin_create(
+    deployment = account.deployments.begin_create_or_update(
         deployment_name=deployment.name,
         deployment={
             "properties": {"model": {"format": "OpenAI", "name": deployment.model}},
@@ -347,26 +376,30 @@ def build_provision_plan(config) -> ProvisioningPlan:
     # AOAI resource
     if check_aoai_exists(aoai):
         logging.info(f"Azure OpenAI {aoai.aoai_resource_name} already exists.")
-        for deployment in config.aoai.deployments:
-            deployment_config = AzureOpenAIDeploymentConfig(**deployment)
-            if not check_aoai_deployment_exists(aoai, deployment_config):
-                logging.info(
-                    f"Azure OpenAI deployment {deployment.name} does not exist. Adding to provisioning plan..."
-                )
-                steps.append(
-                    ProvioningPlanStep.from_args(
-                        create_aoai_deployment, aoai, deployment_config
+        if config.aoai.deployments:
+            for deployment in config.aoai.deployments:
+                deployment_config = AzureOpenAIDeploymentConfig(**deployment)
+                if not check_aoai_deployment_exists(aoai, deployment_config):
+                    logging.info(
+                        f"Azure OpenAI deployment {deployment.name} does not exist. Adding to provisioning plan..."
                     )
-                )
+                    steps.append(
+                        ProvioningPlanStep.from_args(
+                            create_aoai_deployment, aoai, deployment_config
+                        )
+                    )
     else:
         logging.info(
             f"Azure OpenAI {aoai.aoai_resource_name} does not exist. Adding to provisioning plan..."
         )
         steps.append(ProvioningPlanStep.from_args(create_aoai, aoai))
-        for deployment in config.aoai.deployments:
-            steps.append(
-                ProvioningPlanStep.from_args(create_aoai_deployment, aoai, deployment)
-            )
+        if config.aoai.deployments:
+            for deployment in config.aoai.deployments:
+                steps.append(
+                    ProvioningPlanStep.from_args(
+                        create_aoai_deployment, aoai, deployment
+                    )
+                )
 
     return ProvisioningPlan(steps=steps)
 
@@ -383,8 +416,8 @@ def main():
     for step in provision_plan.steps:
         print(str(step))
 
-    # for step in provision_plan.steps:
-    #     step.run()
+    for step in provision_plan.steps:
+        step.run()
 
 
 if __name__ == "__main__":
