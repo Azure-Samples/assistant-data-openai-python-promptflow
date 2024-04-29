@@ -1,0 +1,42 @@
+# id: steelthread_demo_pf_with_assistants
+# name: SteelThread Demo PF with Assistants
+inputs:
+  chat_history:
+    type: list
+    default:
+    - inputs:
+        chat_input: Hello!
+      outputs:
+        chat_output: Hello! How can I assist you today?
+    - inputs:
+        chat_input: What is the county with the highest average of carbon monoxide?
+      outputs:
+        chat_output: The county with the highest average carbon monoxide level is Fulton, with an average value of 0.6143.
+    is_chat_input: false
+    is_chat_history: true
+  chat_input:
+    type: string
+    default: What is the county with the highest average of carbon monoxide?
+    is_chat_input: true
+outputs:
+  chat_output:
+    type: string
+    reference: ${orchestrator.output}
+    is_chat_output: true
+nodes:
+- name: orchestrator
+  type: python
+  source:
+    type: code
+    path: pf_dag_orchestrator.py
+  inputs:
+    # promptflow 'chat' contract
+    chat_history: ${inputs.chat_history}
+    chat_input: ${inputs.chat_input}
+    # parameters for the actual orchestration engine (assistants)
+    orchestrator_aoai_connection: aistudiodemobyoaoaisc
+    orchestrator_assistant_id: asst_4u5BWOcOCVIVEU5eJ34WEuSS
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt
