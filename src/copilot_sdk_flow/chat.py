@@ -254,7 +254,7 @@ def _test():
         messages=[
             {
                 "role": "user",
-                "content": "Plot a histogram of each column in the data file.",
+                "content": "What are the columns in the dataset?",
             }
         ],
     )
