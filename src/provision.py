@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+import re
 import argparse
 from pydantic import BaseModel
 from omegaconf import OmegaConf
@@ -41,6 +42,16 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
         help="yaml config",
         required=True,
         type=str,
+    )
+    parser.add_argument(
+        "--provision",
+        help="Provision resources",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--export_env",
+        help="Export environment variables into a file",
+        default=None,
     )
 
     return parser
@@ -460,6 +471,12 @@ class ProvisioningPlan:
             logging.info(f"Provisioning resource {k}...")
             self.steps[k].create()
 
+    def get_main_ai_hub(self):
+        for k in self.steps:
+            if isinstance(self.steps[k], AzureAIHub):
+                return self.steps[k]
+        return None
+
 
 ########
 # MAIN #
@@ -557,6 +574,50 @@ def build_provision_plan(config) -> ProvisioningPlan:
     return plan
 
 
+def build_environment(environment_config, ai_hub, env_file_path):
+    """Get endpoints and keys from the config into the environment (dotenv)."""
+    # connect to AI Hub
+    ml_client = MLClient(
+        subscription_id=ai_hub.subscription_id,
+        resource_group_name=ai_hub.resource_group_name,
+        workspace_name=ai_hub.hub_name,
+        credential=DefaultAzureCredential(),
+    )
+
+    for key in environment_config.variables.keys():
+        conn_str = environment_config.variables[key]
+
+        # regex extract connection name and type from
+        # "azureml://connections/NAME/SUFFIX"
+        try:
+            # suffix can be either /target or /credentials/key
+            name, suffix = re.match(
+                r"azureml://connections/([^/]+)/(.*)", conn_str
+            ).groups()
+            # name, type = re.match(r"azureml://connections/(.*)/(.*)", conn_str).groups()
+        except AttributeError:
+            logging.critical(f"Invalid connection string: {conn_str}")
+            continue
+
+        logging.info(f"Getting connection {name}...")
+
+        # get connection
+        connection = ml_client.connections.get(name)
+        if suffix == "target":
+            # get target endpoint
+            value = connection.target
+        elif suffix == "credentials/key":
+            value = connection.credentials.key
+        else:
+            raise NotImplementedError(
+                f"Unsupported connection string: {conn_str} (expecting suffix /target or /credentials/key, got {suffix})"
+            )
+
+        with open(env_file_path, "a") as f:
+            logging.info(f"Writing {key} to {env_file_path}")
+            f.write(f"{key}={value}\n")
+
+
 def main():
     """Provision Azure AI resources for you."""
     parser = get_arg_parser()
@@ -575,18 +636,26 @@ def main():
     config = OmegaConf.load(args.config)
     provision_plan = build_provision_plan(config)
 
-    # remove from the plan resources that already exist
-    provision_plan.remove_existing()
+    # save ai_hub for commodity
+    ai_hub = provision_plan.get_main_ai_hub()
 
-    if provision_plan.steps == {}:
-        logging.info("All resources already exist, nothing to do.")
-    else:
-        print("Here's the resulting provisioning plan:")
-        for step_key in provision_plan.steps:
-            print(str(provision_plan.steps[step_key]))
+    if args.provision:
+        # remove from the plan resources that already exist
+        provision_plan.remove_existing()
 
-        # provision all resources remaining
-        provision_plan.provision()
+        if provision_plan.steps == {}:
+            logging.info("All resources already exist, nothing to do.")
+        else:
+            print("Here's the resulting provisioning plan:")
+            for step_key in provision_plan.steps:
+                print(str(provision_plan.steps[step_key]))
+
+            # provision all resources remaining
+            provision_plan.provision()
+
+    if args.export_env:
+        logging.info(f"Building environment into {args.export_env}")
+        build_environment(config.environment, ai_hub, args.export_env)
 
 
 if __name__ == "__main__":
