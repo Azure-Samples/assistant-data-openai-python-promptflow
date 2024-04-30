@@ -76,7 +76,7 @@ pip install -r ./requirements.txt
 2. Use the provisioning script to create resources:
 
     ```bash
-    python ./src/provision.py --config ./src/provision.yaml --build --export-env ./.env
+    python ./src/provision.py --config ./src/provision.yaml --provision --export-env ./.env
     ```
 
     `--build` will actually provision the resources (if you omit, it will show you what it **would** provision)

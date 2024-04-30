@@ -644,19 +644,19 @@ def main():
     # save ai_hub for commodity
     ai_hub = provision_plan.get_main_ai_hub()
 
+    # remove from the plan resources that already exist
+    provision_plan.remove_existing()
+
+    if provision_plan.steps == {}:
+        logging.info("All resources already exist, nothing to do.")
+    else:
+        print("Here's the resulting provisioning plan:")
+        for step_key in provision_plan.steps:
+            print(str(provision_plan.steps[step_key]))
+
     if args.provision:
-        # remove from the plan resources that already exist
-        provision_plan.remove_existing()
-
-        if provision_plan.steps == {}:
-            logging.info("All resources already exist, nothing to do.")
-        else:
-            print("Here's the resulting provisioning plan:")
-            for step_key in provision_plan.steps:
-                print(str(provision_plan.steps[step_key]))
-
-            # provision all resources remaining
-            provision_plan.provision()
+        # provision all resources remaining
+        provision_plan.provision()
 
     if args.export_env:
         logging.info(f"Building environment into {args.export_env}")
