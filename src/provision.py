@@ -446,8 +446,10 @@ class ProvisioningPlan:
         remove_keys = []
         for k in self.steps:
             if self.steps[k].exists():
-                logging.debug(f"Resource {self.steps[k]} already exists, skipping.")
+                logging.info(f"Resource {k} already exists, skipping.")
                 remove_keys.append(k)
+            else:
+                logging.info(f"Resource {k} does not exist, will be added to plan.")
 
         for k in remove_keys:
             del self.steps[k]
@@ -455,6 +457,7 @@ class ProvisioningPlan:
     def provision(self):
         """Provision resources in the plan."""
         for k in self.steps:
+            logging.info(f"Provisioning resource {k}...")
             self.steps[k].create()
 
 
@@ -575,12 +578,15 @@ def main():
     # remove from the plan resources that already exist
     provision_plan.remove_existing()
 
-    print("Here's the resulting provisioning plan:")
-    for step_key in provision_plan.steps:
-        print(str(provision_plan.steps[step_key]))
+    if provision_plan.steps == {}:
+        logging.info("All resources already exist, nothing to do.")
+    else:
+        print("Here's the resulting provisioning plan:")
+        for step_key in provision_plan.steps:
+            print(str(provision_plan.steps[step_key]))
 
-    # provision all resources remaining
-    provision_plan.provision()
+        # provision all resources remaining
+        provision_plan.provision()
 
 
 if __name__ == "__main__":
