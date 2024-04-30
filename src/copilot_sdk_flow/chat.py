@@ -5,154 +5,198 @@ import time
 import os
 import logging
 import json
-
+import inspect
 import base64
+import asyncio
 
 from openai import AzureOpenAI
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
 from promptflow.tracing import start_trace
 from promptflow.tracing import trace
 from distutils.util import strtobool
 
 # local imports
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from functions.query_order_data import query_order_data
+from typing import List
 
 
 @trace
-def run_assistant_thread(
-    client,
-    assistant,
-    thread,
-    max_waiting_time: int = 120,
-    tools: dict[str, callable] = {},
-):
-    # Run the thread
-    logging.info("Running the thread")
-    run = client.beta.threads.runs.create(
-        thread_id=thread.id,
-        assistant_id=assistant.id,
-    )
-    logging.info(f"Pre loop run status: {run.status}")
+async def call_tool(tool_call, message_history: List, output_stream=None):
+    available_functions = {
+        "query_order_data": query_order_data
+    }  # only one function in this example, but you can have multiple
 
-    start_time = time.time()
-    step_logging_cursor = None
+    function_name = tool_call.function.name
+    if function_name not in available_functions:
+        return {"error": f"Function {function_name} not found."}
 
-    # keep track of messages happening during the loop
-    internal_memory = []
+    function_to_call = available_functions[function_name]
+    try:
+        function_args = json.loads(tool_call.function.arguments)
+    except json.JSONDecodeError as e:
+        return {"error": f"Error decoding function arguments: {e}"}
 
-    # loop until max_waiting_time is reached
-    while (time.time() - start_time) < max_waiting_time:
-        # checks the run regularly
-        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-        logging.info(
-            f"Run status: {run.status} (time={int(time.time() - start_time)}s, max_waiting_time={max_waiting_time})"
+    if output_stream:
+        await output_stream.send(
+            f"calling tool {function_name} with args {function_args}\n"
         )
 
-        # check run steps
-        run_steps = client.beta.threads.runs.steps.list(
-            thread_id=thread.id, run_id=run.id, after=step_logging_cursor
-        )
-        for step in run_steps:
-            logging.info("The assistant has moved forward to step {}".format(step.id))
-            internal_memory.append(step.step_details.model_dump())
-            step_logging_cursor = step.id
+    function_response = function_to_call(**function_args)
+    if inspect.iscoroutinefunction(function_to_call):
+        function_response = await function_response
 
-        if run.status == "completed":
-            messages = []
-            for message in client.beta.threads.messages.list(thread_id=thread.id):
-                message = client.beta.threads.messages.retrieve(
-                    thread_id=thread.id, message_id=message.id
-                )
-                messages.append(message)
-            logging.info(f"Run completed with {len(messages)} messages.")
-            final_message = messages[0]
+    return function_response
 
-            text_response = "\n".join(
-                [
-                    message.text.value
-                    for message in final_message.content
-                    if message.type == "text"
-                ]
+
+class AssistantThreadRunner(object):
+    def __init__(self, client, assistant, thread, max_waiting_time: int = 120):
+        self.client = client
+        self.assistant = assistant
+        self.thread = thread
+        self.max_waiting_time = max_waiting_time
+        self.run = None
+        self.step_logging_cursor = None
+        self.messages_during_loop = []
+        self.last_message_id = None
+
+    @trace
+    def run_loop(self, run):
+        self.run = run
+
+        # BONUS: show pre-existing messages in the thread as trace
+        self.last_message_id = None
+        for message in self.client.beta.threads.messages.list(
+            thread_id=self.thread.id, order="asc"
+        ):
+            _ = trace(self.client.beta.threads.messages.retrieve)(
+                thread_id=self.thread.id, message_id=message.id
             )
-            file_ids = []
-            for entry in final_message.content:
-                if entry.type == "image_file":
-                    file_ids.append(entry.image_file.file_id)
-                else:
-                    logging.critical("Unknown content type: {}".format(entry.type))
-            files = [
-                {
-                    "file_id": file_id,
-                    "type": "image",
-                    "content": base64.b64encode(
-                        client.files.content(file_id).read()
-                    ).decode("utf-8"),
-                }
-                for file_id in file_ids
+            self.last_message_id = message.id
+
+        start_time = time.time()
+        self.step_logging_cursor = None
+
+        # keep track of messages happening during the loop
+        self.messages_during_loop = []
+
+        # loop until max_waiting_time is reached
+        while (time.time() - start_time) < self.max_waiting_time:
+            # checks the run regularly
+            self.run = self.client.beta.threads.runs.retrieve(
+                thread_id=self.thread.id, run_id=self.run.id
+            )
+            logging.info(
+                f"Run status: {self.run.status} (time={int(time.time() - start_time)}s, max_waiting_time={self.max_waiting_time})"
+            )
+
+            if self.run.status == "completed":
+                return self.completed()
+            elif self.run.status == "requires_action":
+                self.requires_action()
+            elif self.run.status in ["cancelled", "expired", "failed"]:
+                raise ValueError(f"Run failed with status: {self.run.status}")
+            elif self.run.status in ["in_progress", "queued"]:
+                time.sleep(1)
+            else:
+                raise ValueError(f"Unknown run status: {self.run.status}")
+
+    @trace
+    def completed(self):
+        """What to do when run.status == 'completed'"""
+        messages = []
+        for message in self.client.beta.threads.messages.list(
+            thread_id=self.thread.id, order="asc", after=self.last_message_id
+        ):
+            message = trace(self.client.beta.threads.messages.retrieve)(
+                thread_id=self.thread.id, message_id=message.id
+            )
+            messages.append(message)
+        logging.info(f"Run completed with {len(messages)} messages.")
+        final_message = messages[0]
+
+        text_response = "\n".join(
+            [
+                message.text.value
+                for message in final_message.content
+                if message.type == "text"
             ]
-            # print(files)
-
-            # render something that pass for a ChatCompletion object
-            ret_val = {
-                "id": final_message.id,
-                "model": "openai/assistants",
-                "created": final_message.created_at,
-                "object": "chat.completion",
-                "choices": [
-                    {
-                        "index": 0,
-                        "finish_reason": "stop",
-                        "message": {
-                            "role": "assistant",
-                            "content": text_response,
-                            "files": files,
-                        },
-                        "context": {
-                            "thread_id": thread.id,
-                            "steps": internal_memory,
-                        },
-                    }
-                ],
+        )
+        file_ids = []
+        for entry in final_message.content:
+            if entry.type == "image_file":
+                file_ids.append(entry.image_file.file_id)
+            else:
+                logging.critical("Unknown content type: {}".format(entry.type))
+        files = [
+            {
+                "file_id": file_id,
+                "type": "image",
+                "content": base64.b64encode(
+                    self.client.files.content(file_id).read()
+                ).decode("utf-8"),
             }
+            for file_id in file_ids
+        ]
+        # print(files)
 
-            return ret_val
-        elif run.status == "requires_action":
-            # if the run requires us to run a tool
-            tool_call_outputs = []
+        # render something that pass for a ChatCompletion object
+        ret_val = {
+            "id": final_message.id,
+            "model": "openai/assistants",
+            "created": final_message.created_at,
+            "object": "chat.completion",
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "message": {
+                        "role": "assistant",
+                        "content": text_response,
+                        "files": files,
+                    },
+                    "context": {
+                        "thread_id": self.thread.id,
+                        "steps": self.messages_during_loop,
+                    },
+                }
+            ],
+        }
 
-            for tool_call in run.required_action.submit_tool_outputs.tool_calls:
-                internal_memory.append(tool_call.model_dump())
-                if tool_call.type == "function":
-                    tool_func = tools[tool_call.function.name]
-                    tool_call_output = tool_func(
-                        **json.loads(tool_call.function.arguments)
-                    )
-                    # tool_call_output = call_tool(
-                    #     tools_map[tool_call.function.name], **json.loads(tool_call.function.arguments)
-                    # )
-                    tool_call_outputs.append(
-                        {
-                            "tool_call_id": tool_call.id,
-                            "output": json.dumps(tool_call_output),
-                        }
-                    )
-                    internal_memory.append(tool_call_outputs[-1])
-                else:
-                    raise ValueError(f"Unsupported tool call type: {tool_call.type}")
+        return ret_val
 
-            if tool_call_outputs:
-                _ = client.beta.threads.runs.submit_tool_outputs(
-                    thread_id=thread.id,
-                    run_id=run.id,
-                    tool_outputs=tool_call_outputs,
+    @trace
+    def requires_action(self):
+        """What to do when run.status == 'requires_action'"""
+        # if the run requires us to run a tool
+        tool_call_outputs = []
+
+        for tool_call in self.run.required_action.submit_tool_outputs.tool_calls:
+            self.messages_during_loop.append(tool_call.model_dump())
+            if tool_call.type == "function":
+                # let's keep sync for now
+                logging.info(
+                    f"Calling tool: {tool_call.function.name} with args: {tool_call.function.arguments}"
                 )
-        elif run.status in ["cancelled", "expired", "failed"]:
-            raise ValueError(f"Run failed with status: {run.status}")
+                tool_call_output = asyncio.run(
+                    call_tool(tool_call, self.messages_during_loop)
+                )
+                tool_call_outputs.append(
+                    {
+                        "tool_call_id": tool_call.id,
+                        "output": json.dumps(tool_call_output),
+                    }
+                )
+            else:
+                raise ValueError(f"Unsupported tool call type: {tool_call.type}")
 
-        elif run.status in ["in_progress", "queued"]:
-            time.sleep(1)
-
-        else:
-            raise ValueError(f"Unknown run status: {run.status}")
+        if tool_call_outputs:
+            logging.info(f"Submitting tool outputs: {tool_call_outputs}")
+            _ = trace(self.client.beta.threads.runs.submit_tool_outputs)(
+                thread_id=self.thread.id,
+                run_id=self.run.id,
+                tool_outputs=tool_call_outputs,
+            )
 
 
 @trace
@@ -212,49 +256,65 @@ def chat_completion(
     logging.info(
         f"Using assistant_id from environment variables: {os.getenv('OPENAI_ASSISTANT_ID')}"
     )
-    assistant = aoai_client.beta.assistants.retrieve(os.getenv("OPENAI_ASSISTANT_ID"))
+    assistant = trace(aoai_client.beta.assistants.retrieve)(
+        os.getenv("OPENAI_ASSISTANT_ID")
+    )
 
     # Catch up with a pre-existing thread (id given in the context)
     if "thread_id" in context:
         logging.info(f"Using thread_id from context: {context['thread_id']}")
-        thread = aoai_client.beta.threads.retrieve(context["thread_id"])
+        thread = trace(aoai_client.beta.threads.retrieve)(context["thread_id"])
     else:
         logging.info(f"Creating a new thread")
-        thread = aoai_client.beta.threads.create()
-
-    # # Add conversation history in the thread
-    # logging.info("Adding conversation history in the thread")
-    # for message in messages:
-    #     if message["role"] == 'user':
-    #         _ = self.client.beta.threads.messages.create(
-    #             thread_id=self.thread.id, role=message["role"], content=message["content"]
-    #         )
+        thread = trace(aoai_client.beta.threads.create)()
 
     # Add last message in the thread
     logging.info("Adding last message in the thread")
-    _ = aoai_client.beta.threads.messages.create(
+    _ = trace(aoai_client.beta.threads.messages.create)(
         thread_id=thread.id,
         role=messages[-1]["role"],
         content=messages[-1]["content"],
     )
 
-    return run_assistant_thread(
+    # Create a run in the thread
+    logging.info("Creating the run")
+    run = trace(aoai_client.beta.threads.runs.create)(
+        thread_id=thread.id,
+        assistant_id=assistant.id,
+    )
+    logging.info(f"Pre loop run status: {run.status}")
+
+    runner = AssistantThreadRunner(
         client=aoai_client,
         assistant=assistant,
         thread=thread,
         max_waiting_time=max_waiting_time,
-        tools={},
+    )
+    return runner.run_loop(run)
+
+
+def main():
+    """Test the chat completion function."""
+    from dotenv import load_dotenv
+
+    load_dotenv(override=True)
+
+    from promptflow.tracing import start_trace
+
+    start_trace()
+
+    # turn on logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-
-def _test():
-    """Test the chat completion function."""
     # try a functions combo (without RAG)
     response = chat_completion(
         messages=[
             {
                 "role": "user",
-                "content": "What are the columns in the dataset?",
+                "content": "avg sales in jan",
             }
         ],
     )
@@ -266,31 +326,4 @@ def _test():
 
 
 if __name__ == "__main__":
-    # if we run this script locally for testing
-    from dotenv import load_dotenv
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env", help="Path to .env file", default=".env")
-    parser.add_argument(
-        "--log",
-        help="Logging level",
-        default="INFO",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-    )
-    args = parser.parse_args()
-
-    # turn on logging
-    logging.basicConfig(
-        level=args.log, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
-    # load environment variables
-    logging.debug("Loading environment variables from {}".format(args.env))
-    load_dotenv(args.env, override=True)
-
-    if strtobool(os.getenv("ENABLE_TRACING") or "False"):
-        logging.warning("Enabling tracing for local code execution (chat.py)")
-        start_trace()
-
-    _test()
+    main()
