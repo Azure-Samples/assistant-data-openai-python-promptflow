@@ -609,7 +609,7 @@ def build_environment(environment_config, ai_hub, env_file_path):
             value = connection.target
         elif suffix == "credentials/key":
             # get key itself
-            value = connection.credentials.get(key="key")
+            value = connection.credentials.get(key=name)
         else:
             raise NotImplementedError(
                 f"Unsupported connection string: {conn_str} (expecting suffix /target or /credentials/key, got {suffix})"

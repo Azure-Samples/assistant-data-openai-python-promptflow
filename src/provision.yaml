@@ -21,3 +21,10 @@ aoai:
       model: "gpt-3.5-turbo"
     - name: "text-embedding-ada-002"
       model: "text-embedding-ada-002"
+
+environment:
+  variables:
+    AZURE_OPENAI_ENDPOINT: "azureml://connections/my-new-aoai/target",
+    AZURE_OPENAI_API_KEY: "azureml://connections/my-new-aoai/credentials/key",
+    AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/search_name/target",
+    AZURE_AI_SEARCH_KEY: "azureml://connections/search_name/credentials/key",
