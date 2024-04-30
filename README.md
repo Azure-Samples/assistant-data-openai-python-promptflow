@@ -27,23 +27,37 @@ pip install -r ./requirements.txt
 
     ```yaml
     ai:
-        subscription_id: "<your-subscription-id>"
-        resource_group_name: "<your_resource_group>"
-        hub_name: "<hub_name>"
-        project_name: "<project_name>"
+        # use references to an existing AI Hub+Project resource to connect it to your hub
+        # or else provision.py will create a resource with those references
+        subscription_id: "your-subscription-id"
+        resource_group_name: "your_resource_group"
+        hub_name: "hub_name"
+        project_name: "project_name"
         region: "eastus"
 
     search:
-        subscription_id: "<your-subscription-id>"
-        resource_group_name: "<your_resource_group>"
-        search_resource_name: "<search_resource_name>"
+        # use references to an existing Search resource to connect it to your hub
+        # or else provision.py will create a resource with those references
+        subscription_id: "your-subscription-id"
+        resource_group_name: "your_resource_group"
+        search_resource_name: "search_name"
         region: "eastus"
 
+        # specify the name of the existing/creating hub connection for this resource
+        connection_name: "AzureAISearch"
+
     aoai:
-        subscription_id: "<your-subscription-id>"
-        resource_group_name: "<your_resource_group>"
-        aoai_resource_name: "<aoai_resource_name>"
+        # use references to an existing AOAI resource to connect it to your hub
+        # or else provision.py will create a resource with those references
+        subscription_id: "your-subscription-id"
+        resource_group_name: "your_resource_group"
+        aoai_resource_name: "my-new-aoai"
         region: "eastus"
+
+        # specify the name of the existing/creating hub connection for this resource
+        connection_name: "AzureOpenAI"
+
+        # specify deployments existing/creating
         deployments:
             - name: "gpt-35-turbo"
             model: "gpt-3.5-turbo"
@@ -51,6 +65,7 @@ pip install -r ./requirements.txt
             model: "text-embedding-ada-002"
 
     environment:
+        # below will be used for --export-env argument
         variables:
             AZURE_OPENAI_ENDPOINT: "azureml://connections/my-new-aoai/target",
             AZURE_OPENAI_API_KEY: "azureml://connections/my-new-aoai/credentials/key",
@@ -61,11 +76,11 @@ pip install -r ./requirements.txt
 2. Use the provisioning script to create resources:
 
     ```bash
-    python ./src/provision.py --config ./src/provision.yaml --build --export_env ./.env
+    python ./src/provision.py --config ./src/provision.yaml --build --export-env ./.env
     ```
 
     `--build` will actually provision the resources (if you omit, it will show you what it **would** provision)
-    `--export_env` will export the endpoint/keys into your `.env` file
+    `--export-env` will export the endpoint/keys into your `.env` file
 
 ### 2. Create an assistant
 

@@ -1,4 +1,6 @@
 ai:
+  # use references to an existing AI Hub+Project resource to connect it to your hub
+  # or else provision.py will create a resource with those references
   subscription_id: "your-subscription-id"
   resource_group_name: "your_resource_group"
   hub_name: "hub_name"
@@ -6,16 +8,28 @@ ai:
   region: "eastus"
 
 search:
+  # use references to an existing Search resource to connect it to your hub
+  # or else provision.py will create a resource with those references
   subscription_id: "your-subscription-id"
   resource_group_name: "your_resource_group"
   search_resource_name: "search_name"
   region: "eastus"
 
+  # specify the name of the existing/creating hub connection for this resource
+  connection_name: "AzureAISearch" # this needs to match with name used for env vars below
+
 aoai:
+  # use references to an existing AOAI resource to connect it to your hub
+  # or else provision.py will create a resource with those references
   subscription_id: "your-subscription-id"
   resource_group_name: "your_resource_group"
   aoai_resource_name: "my-new-aoai"
   region: "eastus"
+
+  # specify the name of the existing/creating hub connection for this resource
+  connection_name: "AzureOpenAI" # this needs to match with name used for env vars below
+
+  # specify deployments existing/creating
   deployments:
     - name: "gpt-35-turbo"
       model: "gpt-3.5-turbo"
@@ -23,8 +37,9 @@ aoai:
       model: "text-embedding-ada-002"
 
 environment:
+  # below will be used for --export-env argument
   variables:
-    AZURE_OPENAI_ENDPOINT: "azureml://connections/my-new-aoai/target",
-    AZURE_OPENAI_API_KEY: "azureml://connections/my-new-aoai/credentials/key",
-    AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/search_name/target",
-    AZURE_AI_SEARCH_KEY: "azureml://connections/search_name/credentials/key",
+    AZURE_OPENAI_ENDPOINT: "azureml://connections/AzureOpenAI/target",
+    AZURE_OPENAI_API_KEY: "azureml://connections/AzureOpenAI/credentials/key",
+    AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/AzureAISearch/target",
+    AZURE_AI_SEARCH_KEY: "azureml://connections/AzureAISearch/credentials/key",

@@ -49,7 +49,7 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
         action="store_true",
     )
     parser.add_argument(
-        "--export_env",
+        "--export-env",
         help="Export environment variables into a file",
         default=None,
     )
@@ -534,7 +534,7 @@ def build_provision_plan(config) -> ProvisioningPlan:
     plan.add_resource(
         ConnectionSpec(
             hub=ai_hub,
-            name=config.search.search_resource_name,
+            name=config.search.connection_name,
             auth="key",
             resource=search,
         )
@@ -557,7 +557,7 @@ def build_provision_plan(config) -> ProvisioningPlan:
     plan.add_resource(aoai)
     plan.add_resource(
         ConnectionSpec(
-            hub=ai_hub, name=config.aoai.aoai_resource_name, auth="key", resource=aoai
+            hub=ai_hub, name=config.aoai.connection_name, auth="key", resource=aoai
         )
     )
 
