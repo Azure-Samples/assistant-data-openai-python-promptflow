@@ -603,11 +603,13 @@ def build_environment(environment_config, ai_hub, env_file_path):
 
         # get connection
         connection = ml_client.connections.get(name)
+        print(connection.__dict__)
         if suffix == "target":
             # get target endpoint
             value = connection.target
         elif suffix == "credentials/key":
-            value = connection.credentials.key
+            # get key itself
+            value = connection.credentials.get(key="key")
         else:
             raise NotImplementedError(
                 f"Unsupported connection string: {conn_str} (expecting suffix /target or /credentials/key, got {suffix})"
