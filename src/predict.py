@@ -1,11 +1,12 @@
-"""Script to run evaluation on a dataset using the completion function.
+"""Script to runs predictions of the completion function on sample input data.
 
 This script takes a dataset in JSONL format and runs the completion function on each
 sample. The output is written to a new JSONL file.
 
 Example:
-    python src/evaluate.py --input-data-path data/questions.jsonl --output-data-path data/chat_output.jsonl
+    python src/predict.py --input-data-path data/questions.jsonl --output-data-path data/chat_output.jsonl
 """
+
 from __future__ import annotations
 import asyncio
 import json

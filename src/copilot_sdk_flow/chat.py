@@ -1,5 +1,6 @@
 # enable type annotation syntax on Python versions earlier than 3.9
 from __future__ import annotations
+from typing import List
 
 import time
 import os
@@ -11,14 +12,13 @@ import asyncio
 
 from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-
-from promptflow.tracing import start_trace
 from promptflow.tracing import trace
-from distutils.util import strtobool
 
 # local imports
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__)))
 from functions.query_order_data import query_order_data
-from typing import List
 
 
 @trace
@@ -213,7 +213,7 @@ def chat_completion(
     # verify required env vars
     required_env_vars = [
         "AZURE_OPENAI_ENDPOINT",
-        "OPENAI_ASSISTANT_ID",
+        "AZURE_OPENAI_ASSISTANT_ID",
     ]
     missing_env_vars = []
     for env_var in required_env_vars:
@@ -254,10 +254,10 @@ def chat_completion(
 
     # Get the assistant from the environment variables
     logging.info(
-        f"Using assistant_id from environment variables: {os.getenv('OPENAI_ASSISTANT_ID')}"
+        f"Using assistant_id from environment variables: {os.getenv('AZURE_OPENAI_ASSISTANT_ID')}"
     )
     assistant = trace(aoai_client.beta.assistants.retrieve)(
-        os.getenv("OPENAI_ASSISTANT_ID")
+        os.getenv("AZURE_OPENAI_ASSISTANT_ID")
     )
 
     # Catch up with a pre-existing thread (id given in the context)
