@@ -18,8 +18,8 @@ from azure.mgmt.resource import ResourceManagementClient
 
 # from azure.ai.ml.entities import Project,Hub
 from azure.ai.ml.entities import (
-    WorkspaceHub,
-    Workspace,
+    WorkspaceHub,  # TODO: need to replace with Hub
+    Workspace,  # TODO: need to replace with Project
     AzureOpenAIWorkspaceConnection,
     AzureAISearchWorkspaceConnection,
     ApiKeyConfiguration,
@@ -610,6 +610,9 @@ def build_environment(environment_config, ai_hub, env_file_path):
         elif suffix == "credentials/key":
             # get key itself
             value = connection.credentials.get(key=name)
+            if value is None:
+                logging.error(f"Key {name} not found in connection {conn_str}")
+                continue
         else:
             raise NotImplementedError(
                 f"Unsupported connection string: {conn_str} (expecting suffix /target or /credentials/key, got {suffix})"
