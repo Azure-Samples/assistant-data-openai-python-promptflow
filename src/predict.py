@@ -12,6 +12,7 @@ import asyncio
 import json
 import argparse
 import logging
+import inspect
 
 from openai.types.chat import ChatCompletion
 from tqdm import tqdm
@@ -51,9 +52,14 @@ def main():
     # loop on all input samples
     for input_sample in tqdm(input_dataset):
         # call the completion function
-        result = asyncio.run(
-            chat_completion, [{"role": "user", "content": input_sample["question"]}]
-        )
+        if inspect.iscoroutinefunction(chat_completion):
+            result = asyncio.run(
+                chat_completion([{"role": "user", "content": input_sample["question"]}])
+            )
+        else:
+            result = chat_completion(
+                [{"role": "user", "content": input_sample["question"]}]
+            )
 
         # convert to output data format
         output_data = {"question": input_sample["question"]}
