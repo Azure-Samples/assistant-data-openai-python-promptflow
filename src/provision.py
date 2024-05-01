@@ -265,6 +265,7 @@ class AzureOpenAIDeployment(BaseModel):
     resource: AzureOpenAIResource
     name: str
     model: str
+    version: str
 
     def exists(self) -> bool:
         """Check if the deployment exists."""
@@ -297,7 +298,13 @@ class AzureOpenAIDeployment(BaseModel):
             deployment_name=self.name,
             account_name=self.resource.aoai_resource_name,
             deployment={
-                "properties": {"model": {"format": "OpenAI", "name": self.model}},
+                "properties": {
+                    "model": {
+                        "format": "OpenAI",
+                        "name": self.model,
+                        "version": self.version,
+                    }
+                },
                 "sku": {"capacity": 10, "name": "Standard"},
             },
         ).result()
@@ -566,6 +573,7 @@ def build_provision_plan(config) -> ProvisioningPlan:
                     resource=aoai,
                     name=deployment.name,
                     model=deployment.model,
+                    version=deployment.version,
                 )
             )
 
