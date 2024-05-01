@@ -60,17 +60,20 @@ pip install -r ./requirements.txt
         # specify deployments existing/creating
         deployments:
             - name: "gpt-35-turbo"
-            model: "gpt-3.5-turbo"
+            model: "gpt-35-turbo"
             - name: "text-embedding-ada-002"
             model: "text-embedding-ada-002"
 
     environment:
         # below will be used for --export-env argument
         variables:
-            AZURE_OPENAI_ENDPOINT: "azureml://connections/my-new-aoai/target",
-            AZURE_OPENAI_API_KEY: "azureml://connections/my-new-aoai/credentials/key",
-            AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/search_name/target",
-            AZURE_AI_SEARCH_KEY: "azureml://connections/search_name/credentials/key",
+            # those env vars are drawn from the AI hub connections
+            AZURE_OPENAI_ENDPOINT: "azureml://connections/AzureOpenAI/target"
+            AZURE_OPENAI_API_KEY: "azureml://connections/AzureOpenAI/credentials/key"
+            AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/AzureAISearch/target"
+            AZURE_AI_SEARCH_KEY: "azureml://connections/AzureAISearch/credentials/key"
+            # those are just constants
+            AZURE_OPENAI_CHAT_DEPLOYMENT: "gpt-35-turbo"
     ```
 
 2. Use the provisioning script to create resources:

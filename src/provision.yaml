@@ -41,7 +41,11 @@ aoai:
 environment:
   # below will be used for --export-env argument
   variables:
+    # those env vars are drawn from the AI hub connections
     AZURE_OPENAI_ENDPOINT: "azureml://connections/AzureOpenAI/target"
     AZURE_OPENAI_API_KEY: "azureml://connections/AzureOpenAI/credentials/key"
     AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/AzureAISearch/target"
     AZURE_AI_SEARCH_KEY: "azureml://connections/AzureAISearch/credentials/key"
+    # those are just constants
+    AZURE_OPENAI_CHAT_DEPLOYMENT: "gpt-35-turbo"
+  

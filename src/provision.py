@@ -606,6 +606,13 @@ def build_environment(environment_config, ai_project, env_file_path):
     for key in environment_config.variables.keys():
         conn_str = environment_config.variables[key]
 
+        # write constants directly
+        if not conn_str.startswith("azureml://"):
+            with open(env_file_path, "a") as f:
+                logging.info(f"Writing {key} to {env_file_path}")
+                f.write(f"{key}={conn_str}\n")
+            continue
+
         # regex extract connection name and type from
         # "azureml://connections/NAME/SUFFIX"
         try:
