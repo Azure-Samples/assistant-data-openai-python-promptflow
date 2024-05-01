@@ -516,6 +516,10 @@ def build_provision_plan(config) -> ProvisioningPlan:
     )
     plan.add_resource(ai_hub)
 
+    assert (
+        config.ai.hub_name != config.ai.project_name
+    ), "AI hub_name cannot be the same as project_name"
+
     # Azure AI Project
     plan.add_resource(
         AzureAIProject(
