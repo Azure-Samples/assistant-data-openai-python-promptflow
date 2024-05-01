@@ -482,6 +482,12 @@ class ProvisioningPlan:
                 return self.steps[k]
         return None
 
+    def get_main_ai_project(self):
+        for k in self.steps:
+            if isinstance(self.steps[k], AzureAIProject):
+                return self.steps[k]
+        return None
+
 
 ########
 # MAIN #
@@ -580,15 +586,22 @@ def build_provision_plan(config) -> ProvisioningPlan:
     return plan
 
 
-def build_environment(environment_config, ai_hub, env_file_path):
+def build_environment(environment_config, ai_project, env_file_path):
     """Get endpoints and keys from the config into the environment (dotenv)."""
     # connect to AI Hub
     ml_client = MLClient(
-        subscription_id=ai_hub.subscription_id,
-        resource_group_name=ai_hub.resource_group_name,
-        workspace_name=ai_hub.hub_name,
+        subscription_id=ai_project.subscription_id,
+        resource_group_name=ai_project.resource_group_name,
+        workspace_name=ai_project.hub_name,
         credential=DefaultAzureCredential(),
     )
+
+    with open(env_file_path, "a") as f:
+        logging.info(f"Writing AI Studio references as env vars")
+        f.write(f"AZURE_SUBSCRIPTION_ID={ai_project.subscription_id}\n")
+        f.write(f"AZURE_RESOURCE_GROUP={ai_project.resource_group_name}\n")
+        f.write(f"AZURE_AI_HUB_NAME={ai_project.hub_name}\n")
+        f.write(f"AZURE_AI_PROJET_NAME={ai_project.project_name}\n")
 
     for key in environment_config.variables.keys():
         conn_str = environment_config.variables[key]
@@ -647,8 +660,8 @@ def main():
     config = OmegaConf.load(args.config)
     provision_plan = build_provision_plan(config)
 
-    # save ai_hub for commodity
-    ai_hub = provision_plan.get_main_ai_hub()
+    # save ai_project for commodity
+    ai_project = provision_plan.get_main_ai_project()
 
     # remove from the plan resources that already exist
     provision_plan.remove_existing()
@@ -666,7 +679,7 @@ def main():
 
     if args.export_env:
         logging.info(f"Building environment into {args.export_env}")
-        build_environment(config.environment, ai_hub, args.export_env)
+        build_environment(config.environment, ai_project, args.export_env)
 
 
 if __name__ == "__main__":
