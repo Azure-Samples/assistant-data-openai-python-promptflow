@@ -275,10 +275,6 @@ class AzureOpenAIDeployment(BaseModel):
         )
 
         try:
-            account = client.accounts.get(
-                resource_group_name=self.resource.resource_group_name,
-                account_name=self.resource.aoai_resource_name,
-            )
             deployment = client.deployments.get(
                 resource_group_name=self.resource.resource_group_name,
                 account_name=self.resource.aoai_resource_name,
