@@ -41,7 +41,7 @@ aoai:
 environment:
   # below will be used for --export-env argument
   variables:
-    AZURE_OPENAI_ENDPOINT: "azureml://connections/AzureOpenAI/target",
-    AZURE_OPENAI_API_KEY: "azureml://connections/AzureOpenAI/credentials/key",
-    AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/AzureAISearch/target",
-    AZURE_AI_SEARCH_KEY: "azureml://connections/AzureAISearch/credentials/key",
+    AZURE_OPENAI_ENDPOINT: "azureml://connections/AzureOpenAI/target"
+    AZURE_OPENAI_API_KEY: "azureml://connections/AzureOpenAI/credentials/key"
+    AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/AzureAISearch/target"
+    AZURE_AI_SEARCH_KEY: "azureml://connections/AzureAISearch/credentials/key"
