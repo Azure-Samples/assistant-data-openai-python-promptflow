@@ -265,7 +265,7 @@ class AzureOpenAIDeployment(BaseModel):
     resource: AzureOpenAIResource
     name: str
     model: str
-    version: str
+    version: Optional[str] = None
 
     def exists(self) -> bool:
         """Check if the deployment exists."""
@@ -579,7 +579,9 @@ def build_provision_plan(config) -> ProvisioningPlan:
                     resource=aoai,
                     name=deployment.name,
                     model=deployment.model,
-                    version=deployment.version,
+                    version=(
+                        deployment.version if hasattr(deployment, "version") else None
+                    ),
                 )
             )
 
