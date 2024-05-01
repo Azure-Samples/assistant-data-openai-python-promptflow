@@ -298,7 +298,7 @@ class AzureOpenAIDeployment(BaseModel):
             account_name=self.resource.aoai_resource_name,
             deployment={
                 "properties": {"model": {"format": "OpenAI", "name": self.model}},
-                "sku": {"capacity": 10, "name": "Provisioned"},
+                "sku": {"capacity": 10, "name": "Standard"},
             },
         ).result()
         return deployment
