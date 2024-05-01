@@ -128,7 +128,7 @@ class AzureAIHub(BaseModel):
             location="westus",
             resource_group=self.resource_group_name,
         )
-        response = ml_client.workspaces.begin_create(hub)
+        response = ml_client.workspaces.begin_create(hub).result()
         return response
 
 
@@ -173,7 +173,7 @@ class AzureAIProject(BaseModel):
             location=hub.location,
             resource_group=hub.resource_group,
         )
-        response = ml_client.workspaces.begin_create(project)
+        response = ml_client.workspaces.begin_create(project).result()
 
         return response
 
@@ -216,7 +216,7 @@ class AzureAISearch(BaseModel):
                 "sku": {"name": "standard"},
                 # "tags": {"app-name": "My e-commerce app"},
             },
-        )
+        ).result()
         return search
 
 
@@ -254,10 +254,10 @@ class AzureOpenAIResource(BaseModel):
             account_name=self.aoai_resource_name,
             account={
                 "sku": {"name": "S0"},
-                "kind": "CognitiveServices",
+                "kind": "OpenAI",
                 "location": self.region,
             },
-        )
+        ).result()
         return account
 
 
@@ -300,7 +300,7 @@ class AzureOpenAIDeployment(BaseModel):
                 "properties": {"model": {"format": "OpenAI", "name": self.model}},
                 "sku": {"capacity": 10, "name": "Provisioned"},
             },
-        )
+        ).result()
         return deployment
 
 
