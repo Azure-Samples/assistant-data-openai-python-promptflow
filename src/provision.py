@@ -626,7 +626,7 @@ def build_environment(environment_config, ai_hub, env_file_path):
 def main():
     """Provision Azure AI resources for you."""
     parser = get_arg_parser()
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
