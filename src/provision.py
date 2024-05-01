@@ -279,7 +279,11 @@ class AzureOpenAIDeployment(BaseModel):
                 resource_group_name=self.resource.resource_group_name,
                 account_name=self.resource.aoai_resource_name,
             )
-            deployment = account.deployments.get(deployment_name=self.name)
+            deployment = client.deployments.get(
+                resource_group_name=self.resource.resource_group_name,
+                account_name=self.resource.aoai_resource_name,
+                deployment_name=self.name,
+            )
             logging.debug(f"aoai deployment found: {deployment}")
             return True
         except Exception as e:
