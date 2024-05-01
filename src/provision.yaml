@@ -32,7 +32,7 @@ aoai:
   # specify deployments existing/creating
   deployments:
     - name: "gpt-35-turbo"
-      model: "gpt-3.5-turbo"
+      model: "gpt-35-turbo"
     - name: "text-embedding-ada-002"
       model: "text-embedding-ada-002"
 

@@ -292,15 +292,13 @@ class AzureOpenAIDeployment(BaseModel):
             credential=DefaultAzureCredential(),
             subscription_id=self.resource.subscription_id,
         )
-        account = client.accounts.get(
+        deployment = client.deployments.begin_create_or_update(
             resource_group_name=self.resource.resource_group_name,
-            account_name=self.resource.aoai_resource_name,
-        )
-        deployment = account.deployments.begin_create_or_update(
             deployment_name=self.name,
+            account_name=self.resource.aoai_resource_name,
             deployment={
                 "properties": {"model": {"format": "OpenAI", "name": self.model}},
-                "sku": {"capacity": 300, "name": "Provisioned"},
+                "sku": {"capacity": 10, "name": "Provisioned"},
             },
         )
         return deployment
