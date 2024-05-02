@@ -71,71 +71,45 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 
 ### Quickstart
 
-#### Step 1. Provision your Azure AI project
+### Step 1 : Provision the resources
 
-1. Edit file `./src/provision.yaml` to align with your settings:
+🚧 placeholder for instructions on azd provision
 
-    ```yaml
-    ai:
-        # use references to an existing AI Hub+Project resource to connect it to your hub
-        # or else provision.py will create a resource with those references
-        subscription_id: "your-subscription-id"
-        resource_group_name: "your_resource_group"
-        hub_name: "hub_name"
-        project_name: "project_name"
-        region: "eastus"
+Once you complete the process, your `.env` file should look like this:
 
-    search:
-        # use references to an existing Search resource to connect it to your hub
-        # or else provision.py will create a resource with those references
-        subscription_id: "your-subscription-id"
-        resource_group_name: "your_resource_group"
-        search_resource_name: "search_name"
-        region: "eastus"
+```
+AZURE_SUBSCRIPTION_ID=...
+AZURE_RESOURCE_GROUP=...
+AZURE_AI_HUB_NAME=...
+AZURE_AI_PROJET_NAME=...
+AZURE_OPENAI_ENDPOINT=...
+AZURE_OPENAI_CHAT_DEPLOYMENT=...
+```
 
-        # specify the name of the existing/creating hub connection for this resource
-        connection_name: "AzureAISearch"
+Those environment variables will be required for the following steps to work.
 
-    aoai:
-        # use references to an existing AOAI resource to connect it to your hub
-        # or else provision.py will create a resource with those references
-        subscription_id: "your-subscription-id"
-        resource_group_name: "your_resource_group"
-        aoai_resource_name: "my-new-aoai"
-        region: "eastus"
+To leverage Microsoft Entra ID (AAD) authentification, you'll need to assign to yourself
+the role "Cognitive Services User" to the Azure OpenAI Instance:
 
-        # specify the name of the existing/creating hub connection for this resource
-        connection_name: "AzureOpenAI"
-
-        # specify deployments existing/creating
-        deployments:
-            - name: "gpt-35-turbo"
-            model: "gpt-35-turbo"
-            - name: "text-embedding-ada-002"
-            model: "text-embedding-ada-002"
-
-    environment:
-        # below will be used for --export-env argument
-        variables:
-            # those env vars are drawn from the AI hub connections
-            AZURE_OPENAI_ENDPOINT: "azureml://connections/AzureOpenAI/target"
-            AZURE_OPENAI_API_KEY: "azureml://connections/AzureOpenAI/credentials/key"
-            AZURE_AI_SEARCH_ENDPOINT: "azureml://connections/AzureAISearch/target"
-            AZURE_AI_SEARCH_KEY: "azureml://connections/AzureAISearch/credentials/key"
-            # those are just constants
-            AZURE_OPENAI_CHAT_DEPLOYMENT: "gpt-35-turbo"
-    ```
-
-2. Use the provisioning script to create resources:
+1. Find your `OBJECT_ID`:
 
     ```bash
-    python ./src/provision.py --config ./src/provision.yaml --provision --export-env ./.env
+    az ad signed-in-user show --query id -o tsv
     ```
 
-    `--build` will actually provision the resources (if you omit, it will show you what it **would** provision)
-    `--export-env` will export the endpoint/keys into your `.env` file
+2. Then run the following command to grand permissions:
 
-### 2. Create an assistant
+    ```bash
+    az role assignment create \
+            --role "f2dc8367-1007-4938-bd23-fe263f013447" \
+            --assignee-object-id "$OBJECT_ID" \
+            --scope /subscriptions/"$SUBSCRIPTION_ID"/resourceGroups/"$RESOURCE_GROUP" \
+            --assignee-principal-type User
+    ```
+
+Alternatively, you can set env var `AZURE_OPENAI_API_KEY` with your api key.
+
+#### Step 2. Create an assistant
 
 For the code to run, you need to create an assistant. This means setting up an assistant in your Azure OpenAI resource.
 You will get an assistant id you can inject in the code through an env var to run the assistant.
@@ -144,14 +118,20 @@ You will get an assistant id you can inject in the code through an env var to ru
 python ./src/create_assistant.py
 ```
 
-It will give you the env var to add to `.env` (`AZURE_OPENAI_ASSISTANT_ID=...`).
+It will print the env var to add to `.env`:
 
-### 3. Run the assistant locally
+```
+******************************************************************
+Successfully created assistant with id: [IDENTIFIER].
+Create an environment variable
 
-> Optional: to export traces in your Azure AI Studio, set the config accordingly:
-> ```bash
-> pf config set trace.destination="azureml:/subscriptions/<your_subscription_id>/resourceGroups/<your_resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<your_project_name>"
-> ```
+    AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
+
+to use this assistant in your code. Or write it in your .env file.
+******************************************************************
+```
+
+#### Step 3. Run the assistant flow locally
 
 To run the flow locally, use `pf` cli:
 
@@ -159,32 +139,12 @@ To run the flow locally, use `pf` cli:
 pf flow test --flow ./src/copilot_sdk_flow/flow.flex.yaml --inputs question="which month has peak sales in 2023"
 ```
 
-### 4. Run an evaluation locally
+You can add `--ui` to run the local test bed.
 
-Before running the evaluation, create predictions on the evaluation dataset:
+### Step 4. Run an evaluation locally
 
-```bash
-python ./src/predict.py --input-data-path ./data/evaluation.jsonl --output-data-path ./data/predictions.jsonl
-```
+🚧
 
-**WORK IN PROGRESS** - Then you can run the evaluation on the results :
+### Step 5. Deploy the flow in Azure AI Studio
 
-```bash
-python ./src/evaluate.py --predictions ./data/results.jsonl --evaluation-name dev001 --metrics similarity
-```
-
-### 5. Deploy the flow in Azure AI Studio
-
-**WORK IN PROGRESS**
-
-1. Use the deployment script to deploy your application to Azure AI Studio. This will deploy your app to a managed endpoint in Azure, that you can test, integrate into a front end application, or share with others.
-
-    ```bash
-    python deploy.py --flow-path ./src/copilot_sdk_flow/flow.flex.yaml --deployment-name <deployment_name> --endpoint-name <endpoint_name>
-    ```
-
-2. Verify your deployment. We recommend you follow the deployment link from the previous step to the test your application in the cloud. If you prefer to test your endpoint locally, you can invoke it.
-
-    ```bash
-    python invoke.py --deployment-name <deployment_name>
-    ```
+🚧
