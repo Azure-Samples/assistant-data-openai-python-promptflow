@@ -1,17 +1,19 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
-# enable type annotation syntax on Python versions earlier than 3.9
-from __future__ import annotations
+from typing import TypedDict
 
 # set environment variables before importing any other code
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-load_dotenv()
+print(find_dotenv())
+load_dotenv(override=True)
 
-import asyncio
-import platform
+
+class ChatResponse(TypedDict):
+    context: dict
+    reply: str
+
 
 from promptflow.core import tool
 
@@ -21,25 +23,22 @@ from promptflow.core import tool
 
 
 @tool
-def flow_entry_copilot_sdk(question: str, stream=False) -> str:
-    # workaround for a bug on windows
-    if platform.system() == "Windows":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
+def flow_entry_copilot_sdk(
+    chat_input: str, stream=False, chat_history: list = []
+) -> ChatResponse:
+    print("hello in entry")
     from chat import chat_completion
 
     # Call the async chat function with a single question and print the response
     if stream:
-        result = asyncio.run(
-            chat_completion([{"role": "user", "content": question}], stream=True)
-        )
+        result = chat_completion([{"role": "user", "content": chat_input}], stream=True)
         for r in result:
             print(r)
             print("\n")
     else:
-        result = chat_completion([{"role": "user", "content": question}], stream=False)
-        # result = asyncio.run(
-        #     chat_completion([{"role": "user", "content": question}], stream=False)
-        # )
+        result = chat_completion(
+            [{"role": "user", "content": chat_input}], stream=False
+        )
         print(result)
+
     return result
