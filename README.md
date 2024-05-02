@@ -4,24 +4,74 @@ This repository implements a data analytics chatbot based on the Assistants API.
 The chatbot can answer questions in natural language, and interpret them as queries
 on an example sales dataset.
 
+## Features
+
+**For Developers**
+* An implementation of the Assistants API using functions and code interpreter
+* Deployment available via GitHub actions or Azure AI SDK
+* ...
+
+**For Users**
+* An agent performing data analytics to answer questions in natural language
+
+
+### Architecture Diagram
+
+Include a diagram describing the application (DevDiv is working with Designers on this part)
+
+## Security
+
+(Document security aspects and best practices per template configuration)
 
 ## Getting Started
 
 ### Prerequisites
 
-In order to benefit from this sample, you need to:
-- have an Azure account with an active subscription,
-- have Azure OpenAI enabled in that subscription.
+- Install [azd](https://aka.ms/install-azd)
+    - Windows: `winget install microsoft.azd`
+    - Linux: `curl -fsSL https://aka.ms/install-azd.sh | bash`
+    - MacOS: `brew tap azure/azd && brew install azd`
+- An Azure subscription - [Create one for free](https://azure.microsoft.com/free/cognitive-services)
+- Access granted to Azure OpenAI in the desired Azure subscription  
+  Currently, access to this service is granted only by application. You can apply for access to Azure OpenAI by completing the form at [aka.ms/oai/access](https://aka.ms/oai/access).
+- Python 3.10 or later version
+
+Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a region during deployment accordingly.
 
 ### Installation
 
-To install python requirements:
+1. First, clone the code sample locally:
 
-```bash
-pip install -r ./requirements.txt
-```
+    ```bash
+    git clone https://github.com/Azure-Samples/assistant-data-openai-python-promptflow
+    cd assistant-data-openai-python-promptflow
+    ```
 
-### 1. Provision your Azure AI project
+2. Next, create a new Python virtual environment where we can safely install the SDK packages:
+
+ * On MacOS and Linux run:
+   ```bash
+   python3 --version
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+* On Windows run:
+   ```ps
+   py -3 --version
+   py -3 -m venv .venv
+   .venv\scripts\activate
+   ```
+
+3. Now that your environment is activated, install the SDK packages
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+### Quickstart
+
+#### Step 1. Provision your Azure AI project
 
 1. Edit file `./src/provision.yaml` to align with your settings:
 
