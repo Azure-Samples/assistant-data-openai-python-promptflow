@@ -41,4 +41,4 @@ def flow_entry_copilot_sdk(
         )
         print(result)
 
-    return result
+    return result["choices"][0]["message"]["content"]
