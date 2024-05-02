@@ -532,28 +532,29 @@ def build_provision_plan(config) -> ProvisioningPlan:
     )
 
     # Search resource
-    plan.add_resource(
-        ResourceGroup(
+    if hasattr(config, "search") and config.search is not None:
+        plan.add_resource(
+            ResourceGroup(
+                subscription_id=config.search.subscription_id,
+                resource_group_name=config.search.resource_group_name,
+                region=config.search.region,
+            )
+        )
+        search = AzureAISearch(
             subscription_id=config.search.subscription_id,
             resource_group_name=config.search.resource_group_name,
+            search_resource_name=config.search.search_resource_name,
             region=config.search.region,
         )
-    )
-    search = AzureAISearch(
-        subscription_id=config.search.subscription_id,
-        resource_group_name=config.search.resource_group_name,
-        search_resource_name=config.search.search_resource_name,
-        region=config.search.region,
-    )
-    plan.add_resource(search)
-    plan.add_resource(
-        ConnectionSpec(
-            hub=ai_hub,
-            name=config.search.connection_name,
-            auth="key",
-            resource=search,
+        plan.add_resource(search)
+        plan.add_resource(
+            ConnectionSpec(
+                hub=ai_hub,
+                name=config.search.connection_name,
+                auth="key",
+                resource=search,
+            )
         )
-    )
 
     # AOAI resource
     plan.add_resource(
@@ -641,7 +642,7 @@ def build_environment(environment_config, ai_project, env_file_path):
             value = connection.target
         elif suffix == "credentials/key":
             # get key itself
-            value = connection.credentials.get(key=name)
+            value = connection.credentials.get(key="api_key")
             if value is None:
                 logging.error(f"Key {name} not found in connection {conn_str}")
                 continue
