@@ -17,7 +17,6 @@ load_dotenv()
 import os
 from pprint import pprint
 
-from promptflow.entities import AzureOpenAIConnection
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import (
     CoherenceEvaluator,
@@ -30,6 +29,7 @@ from promptflow.evals.evaluators import (
     ChatEvaluator,
 )
 from promptflow.core import ModelConfiguration
+from promptflow.core import AzureOpenAIModelConfiguration
 
 from azure.ai.ml import MLClient
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
@@ -48,14 +48,12 @@ def run_evaluation(predictions_path, evaluation_name, evaluation_model, metrics)
         token_provider = get_bearer_token_provider(
             credential, "https://cognitiveservices.azure.com/.default"
         )
-        api_key = token_provider.get_token()
+        api_key = token_provider()
 
-    model_config = ModelConfiguration.from_connection(
-        AzureOpenAIConnection(
-            api_base=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-            api_key=api_key,
-            api_type="azure",
-        )
+    model_config = AzureOpenAIModelConfiguration(
+        azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+        api_key=api_key,
+        azure_deployment=evaluation_model,
     )
 
     # ml_client = MLClient(
@@ -102,7 +100,7 @@ def run_evaluation(predictions_path, evaluation_name, evaluation_model, metrics)
         # target=qna_fn,
         data=predictions_path,
         evaluators=evaluators,
-        tracking_uri=tracking_uri,
+        # tracking_uri=tracking_uri,
     )
 
     # pprint(result)
