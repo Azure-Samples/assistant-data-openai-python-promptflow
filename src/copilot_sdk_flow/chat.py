@@ -1,5 +1,3 @@
-# enable type annotation syntax on Python versions earlier than 3.9
-from __future__ import annotations
 from typing import List
 
 import time
@@ -13,6 +11,8 @@ import asyncio
 from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from promptflow.tracing import trace
+from dotenv import load_dotenv
+from promptflow.tracing import start_trace
 
 # local imports
 import sys
@@ -97,7 +97,7 @@ class AssistantThreadRunner(object):
             elif self.run.status in ["cancelled", "expired", "failed"]:
                 raise ValueError(f"Run failed with status: {self.run.status}")
             elif self.run.status in ["in_progress", "queued"]:
-                time.sleep(1)
+                time.sleep(0.25)
             else:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
@@ -295,12 +295,7 @@ def chat_completion(
 
 def main():
     """Test the chat completion function."""
-    from dotenv import load_dotenv
-
     load_dotenv(override=True)
-
-    from promptflow.tracing import start_trace
-
     start_trace()
 
     # turn on logging

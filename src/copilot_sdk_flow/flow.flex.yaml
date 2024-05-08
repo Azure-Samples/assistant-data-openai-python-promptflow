@@ -9,9 +9,11 @@ inputs:
     type: bool
     default: false
 outputs:
+  context:
+    type: string
   reply:
     type: string
     is_chat_output: true
-entry: entry:flow_entry_copilot_sdk
+entry: entry:flow_entry_copilot_assistants
 environment:
   python_requirements_txt: requirements.txt

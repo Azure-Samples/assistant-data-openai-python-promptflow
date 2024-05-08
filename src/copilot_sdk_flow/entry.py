@@ -23,7 +23,7 @@ from promptflow.core import tool
 
 
 @tool
-def flow_entry_copilot_sdk(
+def flow_entry_copilot_assistants(
     chat_input: str, stream=False, chat_history: list = []
 ) -> ChatResponse:
     print("hello in entry")
@@ -41,4 +41,7 @@ def flow_entry_copilot_sdk(
         )
         print(result)
 
-    return result["choices"][0]["message"]["content"]
+    return ChatResponse(
+        reply=result["choices"][0]["message"]["content"],
+        context=result["choices"][0]["message"].get("context", ""),
+    )
