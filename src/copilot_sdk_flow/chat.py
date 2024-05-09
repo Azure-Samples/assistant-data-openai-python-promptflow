@@ -1,5 +1,3 @@
-# enable type annotation syntax on Python versions earlier than 3.9
-from __future__ import annotations
 from typing import List
 
 import time
@@ -13,6 +11,8 @@ import asyncio
 from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from promptflow.tracing import trace
+from dotenv import load_dotenv
+from promptflow.tracing import start_trace
 
 # local imports
 import sys
@@ -97,7 +97,7 @@ class AssistantThreadRunner(object):
             elif self.run.status in ["cancelled", "expired", "failed"]:
                 raise ValueError(f"Run failed with status: {self.run.status}")
             elif self.run.status in ["in_progress", "queued"]:
-                time.sleep(1)
+                time.sleep(0.25)
             else:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
@@ -157,7 +157,7 @@ class AssistantThreadRunner(object):
                     },
                     "context": {
                         "thread_id": self.thread.id,
-                        "steps": self.messages_during_loop,
+                        # "steps": self.messages_during_loop,
                     },
                 }
             ],
@@ -264,17 +264,26 @@ def chat_completion(
     if "thread_id" in context:
         logging.info(f"Using thread_id from context: {context['thread_id']}")
         thread = trace(aoai_client.beta.threads.retrieve)(context["thread_id"])
+
+        # Add last message in the thread
+        logging.info("Adding last message in the thread")
+        _ = trace(aoai_client.beta.threads.messages.create)(
+            thread_id=thread.id,
+            role=messages[-1]["role"],
+            content=messages[-1]["content"],
+        )
     else:
         logging.info(f"Creating a new thread")
         thread = trace(aoai_client.beta.threads.create)()
-
-    # Add last message in the thread
-    logging.info("Adding last message in the thread")
-    _ = trace(aoai_client.beta.threads.messages.create)(
-        thread_id=thread.id,
-        role=messages[-1]["role"],
-        content=messages[-1]["content"],
-    )
+        
+        # Add all messages in the thread
+        logging.info("Adding all messages in the thread")
+        for message in messages:
+            _ = trace(aoai_client.beta.threads.messages.create)(
+                thread_id=thread.id,
+                role=message["role"],
+                content=message["content"],
+            )
 
     # Create a run in the thread
     logging.info("Creating the run")
@@ -295,12 +304,7 @@ def chat_completion(
 
 def main():
     """Test the chat completion function."""
-    from dotenv import load_dotenv
-
     load_dotenv(override=True)
-
-    from promptflow.tracing import start_trace
-
     start_trace()
 
     # turn on logging

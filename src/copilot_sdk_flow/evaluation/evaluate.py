@@ -29,8 +29,6 @@ from promptflow.evals.evaluators import (
 from azure.ai.ml import MLClient
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
-# local imports
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 def get_model_config(evaluation_model):
     """Get the model configuration for the evaluation."""
