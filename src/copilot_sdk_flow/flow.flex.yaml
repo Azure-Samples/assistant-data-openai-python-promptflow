@@ -8,6 +8,9 @@ inputs:
   stream:
     type: bool
     default: false
+  context:
+    type: string
+    default: ""
 outputs:
   context:
     type: string
