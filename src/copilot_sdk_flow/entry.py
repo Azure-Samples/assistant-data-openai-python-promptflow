@@ -5,6 +5,7 @@ from typing import TypedDict
 
 # set environment variables before importing any other code
 from dotenv import load_dotenv, find_dotenv
+import json
 
 print(find_dotenv())
 load_dotenv(override=True)
@@ -23,22 +24,44 @@ from promptflow.core import tool
 
 
 @tool
-def flow_entry_copilot_sdk(
-    chat_input: str, stream=False, chat_history: list = []
+def flow_entry_copilot_assistants(
+    chat_input: str, stream=False, chat_history: list = [], context: str = None
 ) -> ChatResponse:
     print("hello in entry")
     from chat import chat_completion
 
+    # json parse context as dict
+    context = json.loads(context) if context else {}
+
+    # refactor the whole chat_history thing
+    conversation = [
+        {
+            "role": "user" if "inputs" in message else "assistant",
+            "content": (
+                message["inputs"]["chat_input"]
+                if "inputs" in message
+                else message["outputs"]["chat_output"]
+            ),
+        }
+        for message in chat_history
+    ]
+
+    # add the user input as last message in the conversation
+    conversation.append({"role": "user", "content": chat_input})
+
     # Call the async chat function with a single question and print the response
     if stream:
-        result = chat_completion([{"role": "user", "content": chat_input}], stream=True)
+        result = chat_completion(conversation, stream=True, context=context)
         for r in result:
             print(r)
             print("\n")
     else:
         result = chat_completion(
-            [{"role": "user", "content": chat_input}], stream=False
+            conversation, stream=False, context=context
         )
         print(result)
 
-    return result["choices"][0]["message"]["content"]
+    return ChatResponse(
+        reply=result["choices"][0]["message"]["content"],
+        context=result["choices"][0].get("context", ""),
+    )
