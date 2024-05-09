@@ -73,9 +73,12 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 
 ### Step 1 : Provision the resources
 
-🚧 placeholder for instructions on azd provision
+Run the following command under root folder of repo. Please install azd if it's not be installed.
+```bash
+azd up
+```
 
-Once you complete the process, your `.env` file should look like this:
+Once you complete the process, you can find `.env` file under .azure\{env} folder. Your `.env` file should look like this:
 
 ```
 AZURE_SUBSCRIPTION_ID=...
@@ -86,7 +89,7 @@ AZURE_OPENAI_ENDPOINT=...
 AZURE_OPENAI_CHAT_DEPLOYMENT=...
 ```
 
-Those environment variables will be required for the following steps to work.
+Those environment variables will be required for the following steps to work. You can copy it to the root folder.
 
 To leverage Microsoft Entra ID (AAD) authentification, you'll need to assign to yourself
 the role "Cognitive Services User" to the Azure OpenAI Instance:
