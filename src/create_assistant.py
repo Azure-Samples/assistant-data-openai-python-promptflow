@@ -5,7 +5,6 @@ Once the assistant is created, you can interact with it using the OpenAI API (se
 """
 
 from dotenv import load_dotenv, dotenv_values
-
 load_dotenv(override=True)
 
 import os
@@ -44,6 +43,7 @@ def main():
         "AZURE_OPENAI_CHAT_DEPLOYMENT" in os.environ
     ), "Please set AZURE_OPENAI_CHAT_DEPLOYMENT in the environment variables."
 
+    logging.info(f"Connecting to Azure OpenAI endpoint {os.getenv('AZURE_OPENAI_ENDPOINT')}")
     # create an AzureOpenAI client using AAD or key based auth
     if "AZURE_OPENAI_API_KEY" in os.environ:
         logging.warning(
