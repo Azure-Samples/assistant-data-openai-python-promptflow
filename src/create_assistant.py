@@ -4,15 +4,15 @@ You would typically run this script once to create an assistant with the desired
 Once the assistant is created, you can interact with it using the OpenAI API (see src/copilot_sdk_flow/chat.py).
 """
 
-from dotenv import load_dotenv, dotenv_values
-load_dotenv(override=True)
-
 import os
 import json
 import logging
 import argparse
 from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
+from dotenv import load_dotenv, dotenv_values
+load_dotenv(override=True)
 
 
 def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentParser:
