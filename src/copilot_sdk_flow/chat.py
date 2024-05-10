@@ -222,14 +222,14 @@ def chat_completion(
     assert not missing_env_vars, f"Missing environment variables: {missing_env_vars}"
 
     # create an AzureOpenAI client using AAD or key based auth
-    if "AZURE_OPENAI_KEY" in os.environ:
+    if "AZURE_OPENAI_API_KEY" in os.environ:
         logging.warning(
             "Using key-based authentification, instead we recommend using Azure AD authentification instead."
         )
         aoai_client = AzureOpenAI(
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            api_key=os.getenv("AZURE_OPENAI_KEY"),
-            api_version="2024-02-15-preview",
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
         )
     else:
         logging.info("Using Azure AD authentification [recommended]")
