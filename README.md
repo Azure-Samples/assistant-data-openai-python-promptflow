@@ -118,19 +118,18 @@ For the code to run, you need to create an assistant. This means setting up an a
 You will get an assistant id you can inject in the code through an env var to run the assistant.
 
 ```bash
-python ./src/create_assistant.py
+python ./src/create_assistant.py --export-env ./.azure/"$AZURE_ENV_NAME"/.env
 ```
 
-It will print the env var to add to `.env`:
+It will write the assistant id into your `.env` file:
 
 ```
 ******************************************************************
 Successfully created assistant with id: [IDENTIFIER].
-Create an environment variable
+It has been written as an environment variable in .\.azure\[ENVIRONMENT]\.env.
 
-    AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
+AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
 
-to use this assistant in your code. Or write it in your .env file.
 ******************************************************************
 ```
 
