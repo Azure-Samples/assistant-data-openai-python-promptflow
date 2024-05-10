@@ -275,7 +275,7 @@ def chat_completion(
     else:
         logging.info(f"Creating a new thread")
         thread = trace(aoai_client.beta.threads.create)()
-        
+
         # Add all messages in the thread
         logging.info("Adding all messages in the thread")
         for message in messages:
