@@ -396,10 +396,11 @@ class ConnectionSpec(BaseModel):
                 subscription_id=self.resource.subscription_id,
             )
 
-            # TODO: need better
-            resource_target = (
-                f"https://{self.resource.aoai_resource_name}.openai.azure.com/"
-            )
+            # get endpoint
+            resource_target = rsc_client.accounts.get(
+                resource_group_name=self.resource.resource_group_name,
+                account_name=self.resource.aoai_resource_name,
+            ).properties.endpoint
 
             # get keys
             rsc_keys = rsc_client.accounts.list_keys(
@@ -618,7 +619,7 @@ def build_environment(environment_config, ai_project, env_file_path):
         f.write(f"AZURE_SUBSCRIPTION_ID={ai_project.subscription_id}\n")
         f.write(f"AZURE_RESOURCE_GROUP={ai_project.resource_group_name}\n")
         f.write(f"AZURE_AI_HUB_NAME={ai_project.hub_name}\n")
-        f.write(f"AZURE_AI_PROJET_NAME={ai_project.project_name}\n")
+        f.write(f"AZURE_AI_PROJECT_NAME={ai_project.project_name}\n")
 
     for key in environment_config.variables.keys():
         conn_str = environment_config.variables[key]
