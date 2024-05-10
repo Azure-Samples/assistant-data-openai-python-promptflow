@@ -7,7 +7,6 @@ from functools import partial
 
 # set environment variables before importing any other code (in particular the openai module)
 from dotenv import load_dotenv
-
 load_dotenv()
 
 import os
@@ -40,11 +39,11 @@ def get_model_config(evaluation_endpoint, evaluation_model):
     """Get the model configuration for the evaluation."""
 
     # create an AzureOpenAI client using AAD or key based auth
-    if "AZURE_OPENAI_KEY" in os.environ:
+    if "AZURE_OPENAI_API_KEY" in os.environ:
         logging.warning(
             "Using key-based authentification, instead we recommend using Azure AD authentification instead."
         )
-        api_key = os.getenv("AZURE_OPENAI_KEY")
+        api_key = os.getenv("AZURE_OPENAI_API_KEY")
     else:
         logging.info("Using Azure AD authentification [recommended]")
         credential = DefaultAzureCredential()
