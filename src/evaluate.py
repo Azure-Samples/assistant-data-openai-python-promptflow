@@ -1,12 +1,10 @@
 import json
-import pathlib
 import argparse
 import logging
-import sys
-from functools import partial
 
 # set environment variables before importing any other code (in particular the openai module)
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import os
@@ -26,13 +24,13 @@ from promptflow.evals.evaluators import (
     # ChatEvaluator,
 )
 
-from azure.ai.ml import MLClient
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 # local imports
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "copilot_sdk_flow"))
-from entry import flow_entry_copilot_assistants
-import time
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+from copilot_sdk_flow.entry import flow_entry_copilot_assistants
 
 
 def get_model_config(evaluation_endpoint, evaluation_model):

@@ -17,13 +17,18 @@ class ChatResponse(TypedDict):
 
 
 from promptflow.core import tool
+
+# local imports
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__)))
 from chat import chat_completion
+
 
 # The inputs section will change based on the arguments of the tool function, after you save the code
 # Adding type to arguments and return value will help the system show the types properly
 # Please update the function name/signature per need
-
-
 @tool
 def flow_entry_copilot_assistants(
     chat_input: str, stream=False, chat_history: list = [], context: str = None

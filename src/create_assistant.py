@@ -5,6 +5,7 @@ Once the assistant is created, you can interact with it using the OpenAI API (se
 """
 
 from dotenv import load_dotenv, dotenv_values
+
 load_dotenv(override=True)
 
 import os
@@ -27,6 +28,7 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
     )
 
     return parser
+
 
 def main():
     """Create an assistant with a code interpreter tool and a function tool."""
@@ -89,7 +91,7 @@ def main():
 
     logging.info(f"Assistant created with id: {assistant.id}")
 
-    logging.info(f"Exporting assistant id to {args.export_env}...")    
+    logging.info(f"Exporting assistant id to {args.export_env}...")
     dotenv_vars = dotenv_values(args.export_env)
     dotenv_vars["AZURE_OPENAI_ASSISTANT_ID"] = assistant.id
     with open(args.export_env, "w") as f:

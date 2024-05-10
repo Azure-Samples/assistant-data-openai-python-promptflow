@@ -11,8 +11,6 @@ import asyncio
 from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from promptflow.tracing import trace
-from dotenv import load_dotenv
-from promptflow.tracing import start_trace
 
 # local imports
 import sys
@@ -300,34 +298,3 @@ def chat_completion(
         max_waiting_time=max_waiting_time,
     )
     return runner.run_loop(run)
-
-
-def main():
-    """Test the chat completion function."""
-    load_dotenv(override=True)
-    start_trace()
-
-    # turn on logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-
-    # try a functions combo (without RAG)
-    response = chat_completion(
-        messages=[
-            {
-                "role": "user",
-                "content": "avg sales in jan",
-            }
-        ],
-    )
-
-    # test expected format
-    from openai.types.chat import ChatCompletion
-
-    print(ChatCompletion.model_validate(response))
-
-
-if __name__ == "__main__":
-    main()
