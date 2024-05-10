@@ -4,20 +4,36 @@ You would typically run this script once to create an assistant with the desired
 Once the assistant is created, you can interact with it using the OpenAI API (see src/copilot_sdk_flow/chat.py).
 """
 
-import os
-import time
-import json
-from openai import AzureOpenAI
-from dotenv import load_dotenv
-
+from dotenv import load_dotenv, dotenv_values
 load_dotenv(override=True)
+
+import os
+import json
 import logging
+import argparse
+from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
+
+def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentParser:
+    """Get the argument parser for the script."""
+    if parser is None:
+        parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument(
+        "--export-env",
+        type=str,
+        default=os.path.join(os.path.dirname(__file__), ".env"),
+    )
+
+    return parser
 
 def main():
     """Create an assistant with a code interpreter tool and a function tool."""
     logging.basicConfig(level=logging.INFO)
+
+    parser = get_arg_parser()
+    args = parser.parse_args()
 
     assert (
         "AZURE_OPENAI_ENDPOINT" in os.environ
@@ -71,15 +87,23 @@ def main():
         ],
     )
 
+    logging.info(f"Assistant created with id: {assistant.id}")
+
+    logging.info(f"Exporting assistant id to {args.export_env}...")    
+    dotenv_vars = dotenv_values(args.export_env)
+    dotenv_vars["AZURE_OPENAI_ASSISTANT_ID"] = assistant.id
+    with open(args.export_env, "w") as f:
+        for key, value in dotenv_vars.items():
+            f.write(f"{key}={value}\n")
+
     print(
         f"""
 ******************************************************************
 Successfully created assistant with id: {assistant.id}.
-Create an environment variable
+It has been written as an environment variable in {args.export_env}.
     
-    AZURE_OPENAI_ASSISTANT_ID={assistant.id}
+AZURE_OPENAI_ASSISTANT_ID={assistant.id}
     
-to use this assistant in your code. Or write it in your .env file.
 ******************************************************************"""
     )
 
