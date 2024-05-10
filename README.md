@@ -106,7 +106,7 @@ the role "Cognitive Services User" to the Azure OpenAI Instance:
     az role assignment create \
             --role "f2dc8367-1007-4938-bd23-fe263f013447" \
             --assignee-object-id "$OBJECT_ID" \
-            --scope /subscriptions/"$SUBSCRIPTION_ID"/resourceGroups/"$RESOURCE_GROUP" \
+            --scope /subscriptions/"$AZURE_SUBSCRIPTION_ID"/resourceGroups/"$AZURE_RESOURCE_GROUP"/ \
             --assignee-principal-type User
     ```
 
@@ -159,5 +159,5 @@ This will print out the results of the evaluation, as well as a link to the Azur
 To deploy the flow in your Azure AI project under a managed endpoint, use:
 
 ```bash
-python ./src/deploy.py --flow-path ./src/copilot_sdk_flow --aoai-connection-name aoai-connection
+python ./src/deploy.py
 ```
