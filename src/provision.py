@@ -28,10 +28,10 @@ from azure.mgmt.resource import ResourceManagementClient
 
 # from azure.ai.ml.entities import Project,Hub
 from azure.ai.ml.entities import (
-    WorkspaceHub,  # TODO: need to replace with Hub
-    Workspace,  # TODO: need to replace with Project
-    AzureOpenAIWorkspaceConnection,
-    AzureAISearchWorkspaceConnection,
+    Hub,  # TODO: need to replace with Hub
+    Project,  # TODO: need to replace with Project
+    AzureOpenAIConnection,
+    AzureAISearchConnection,
     ApiKeyConfiguration,
 )
 
@@ -133,7 +133,7 @@ class AzureAIHub(BaseModel):
             credential=DefaultAzureCredential(),
         )
 
-        hub = WorkspaceHub(
+        hub = Hub(
             name=self.hub_name,
             location="westus",
             resource_group=self.resource_group_name,
@@ -177,9 +177,9 @@ class AzureAIProject(BaseModel):
 
         hub = ml_client.workspaces.get(self.hub_name)
 
-        project = Workspace(
+        project = Project(
             name=self.project_name,
-            workspace_hub=hub.id,
+            hub_id=hub.id,
             location=hub.location,
             resource_group=hub.resource_group,
         )
@@ -375,21 +375,15 @@ class ConnectionSpec(BaseModel):
                 search_service_name=self.resource.search_resource_name,
             )
 
-            # get key into connection
-            credentials = ApiKeyConfiguration(key=rsc_keys.primary_key)
-
             # specify connection
-            connection_config = AzureAISearchWorkspaceConnection(
-                target=resource_target,
-                credentials=credentials,
-                type="CognitiveSearch",
+            connection_config = AzureAISearchConnection(
+                endpoint=resource_target,
+                api_key=rsc_keys.primary_key,  # using key-based auth
                 name=self.name,
             )
 
             # create connection
-            return ml_client.connections.create_or_update(
-                workspace_connection=connection_config
-            )
+            return ml_client.connections.create_or_update(connection=connection_config)
         if isinstance(self.resource, AzureOpenAIResource):
             rsc_client = CognitiveServicesManagementClient(
                 credential=DefaultAzureCredential(),
@@ -408,21 +402,15 @@ class ConnectionSpec(BaseModel):
                 account_name=self.resource.aoai_resource_name,
             )
 
-            # get key into connection
-            credentials = ApiKeyConfiguration(key=rsc_keys.key1)
-
             # specify connection
-            connection_config = AzureOpenAIWorkspaceConnection(
-                target=resource_target,
-                credentials=credentials,
-                type="AzureOpenAI",
+            connection_config = AzureOpenAIConnection(
+                azure_endpoint=resource_target,
+                api_key=rsc_keys.key1,  # using key-based auth
                 name=self.name,
             )
 
             # create connection
-            return ml_client.connections.create_or_update(
-                workspace_connection=connection_config
-            )
+            return ml_client.connections.create_or_update(connection=connection_config)
         else:
             raise ValueError(f"Unknown connection type: {self.resource.type}")
 
