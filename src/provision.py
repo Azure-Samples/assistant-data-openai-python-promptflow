@@ -1,7 +1,6 @@
 """Provision Azure AI resources for you."""
 
 """
-TODO: get url from dan's code
 - script can fail in certain types
     - sub id has a typo
     - dotenv is appending, not overwriting
@@ -54,8 +53,8 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
         type=str,
     )
     parser.add_argument(
-        "--provision",
-        help="Provision resources",
+        "--show-only",
+        help="Don't provision but only show provisioning plan",
         action="store_true",
     )
     parser.add_argument(
@@ -686,7 +685,7 @@ def main():
         for step_key in provision_plan.steps:
             print(str(provision_plan.steps[step_key]))
 
-    if args.provision:
+    if not args.show_only:
         # provision all resources remaining
         provision_plan.provision()
 
