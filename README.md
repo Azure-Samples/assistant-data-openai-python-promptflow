@@ -156,4 +156,8 @@ This will print out the results of the evaluation, as well as a link to the Azur
 
 ### Step 5. Deploy the flow in Azure AI Studio
 
-🚧
+To deploy the flow in your Azure AI project under a managed endpoint, use:
+
+```bash
+python ./src/deploy.py --flow-path ./src/copilot_sdk_flow --aoai-connection-name aoai-connection
+```
