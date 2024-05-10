@@ -31,38 +31,14 @@ from azure.ai.ml import MLClient
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 # local imports
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from copilot_sdk_flow.entry import flow_entry_copilot_assistants
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "copilot_sdk_flow"))
+from entry import flow_entry_copilot_assistants
 import time
 
 
-def latency_wrapper(completion_func, *args, **kwargs):
-    """Wrapper function for latency evaluation."""
-    start_time = time.time()
-    result = completion_func(*args, **kwargs)
-    latency = time.time() - start_time
-    return {"latency": latency, **result}
-
-
-class CustomFieldEvaluator:
-    def __init__(self, metric_name: str):
-        self.metric_name = metric_name
-
-    def __call__(self, *, value: str, **kwargs):
-        """Returns a value as metric.
-
-        :param value: The value to be returned (from chat completion outputs).
-        :type value: str
-        :return: The value as float.
-        :rtype: dict
-        """
-
-        # Run the evaluation flow
-        return {self.metric_name: value}
-
-
-def get_model_config(evaluation_model):
+def get_model_config(evaluation_endpoint, evaluation_model):
     """Get the model configuration for the evaluation."""
+
     # create an AzureOpenAI client using AAD or key based auth
     if "AZURE_OPENAI_KEY" in os.environ:
         logging.warning(
@@ -78,7 +54,7 @@ def get_model_config(evaluation_model):
         api_key = token_provider()
 
     model_config = AzureOpenAIModelConfiguration(
-        azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+        azure_endpoint=evaluation_endpoint,
         api_key=api_key,
         azure_deployment=evaluation_model,
     )
@@ -87,7 +63,6 @@ def get_model_config(evaluation_model):
 
 
 def run_evaluation(
-    completion_func,
     evaluation_name,
     evaluation_model_config,
     evaluation_data_path,
@@ -95,6 +70,9 @@ def run_evaluation(
     output_path=None,
 ):
     """Run the evaluation routine."""
+    # completion_func = latency_qna_function
+    completion_func = flow_entry_copilot_assistants
+
     # Initializing Relevance Evaluator
     evaluators = {}
     evaluators_config = {}
@@ -109,7 +87,7 @@ def run_evaluation(
                 "answer": "${target.reply}",
             }
         elif metric_name == "f1score":
-            evaluators[metric_name] = F1ScoreEvaluator(evaluation_model_config)
+            evaluators[metric_name] = F1ScoreEvaluator()
             evaluators_config[metric_name] = {
                 "answer": "${target.reply}",
                 "ground_truth": "${data.ground_truth}",
@@ -149,11 +127,7 @@ def run_evaluation(
                 "ground_truth": "${data.ground_truth}",
             }
         elif metric_name == "latency":
-            completion_func = partial(latency_wrapper, completion_func)
-            evaluators[metric_name] = CustomFieldEvaluator("latency")
-            evaluators_config[metric_name] = {
-                "latency": "${target.latency}",
-            }
+            raise NotImplementedError("Latency metric is not implemented yet")
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -170,9 +144,6 @@ def run_evaluation(
     )
 
     tabular_result = pd.DataFrame(result.get("rows"))
-    # UPCOMING: this line will be handled by output_path in evaluate function
-    tabular_result.to_json(output_path, orient="records", lines=True)
-
     return result, tabular_result
 
 
@@ -192,10 +163,16 @@ def main():
         default="eval-sdk-dev",
     )
     parser.add_argument(
+        "--evaluation-endpoint",
+        help="Azure OpenAI endpoint used for evaluation",
+        type=str,
+        default=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    )
+    parser.add_argument(
         "--evaluation-model",
         help="Azure OpenAI model deployment name used for evaluation",
         type=str,
-        default=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT", "gpt-35-turbo"),
+        default=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
     )
     parser.add_argument(
         "--metrics",
@@ -221,19 +198,21 @@ def main():
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    # remove logging from some dependencies
+    # set logging level from some dependencies
     logging.getLogger("azure.core").setLevel(logging.ERROR)
     logging.getLogger("azure.identity").setLevel(logging.ERROR)
     logging.getLogger("azure.monitor").setLevel(logging.ERROR)
+    # logging.getLogger("promptflow").setLevel(logging.ERROR)
 
     logging.info(f"Running script with arguments: {args}")
 
     # get a model config for evaluation
-    eval_model_config = get_model_config(args.evaluation_model)
+    eval_model_config = get_model_config(
+        args.evaluation_endpoint, args.evaluation_model
+    )
 
     # run the evaluation routine
     result, tabular_result = run_evaluation(
-        completion_func=flow_entry_copilot_assistants,
         evaluation_name=args.evaluation_name,
         evaluation_model_config=eval_model_config,
         evaluation_data_path=args.evaluation_data_path,
@@ -243,7 +222,7 @@ def main():
     pprint("-----Summarized Metrics-----")
     pprint(result["metrics"])
     pprint("-----Tabular Result-----")
-    pprint(tabular_result)
+    print(json.dumps(tabular_result.to_json(orient="records", lines=True), indent=4))
     pprint(f"View evaluation results in AI Studio: {result['studio_url']}")
 
 

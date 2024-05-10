@@ -17,6 +17,7 @@ class ChatResponse(TypedDict):
 
 
 from promptflow.core import tool
+from chat import chat_completion
 
 # The inputs section will change based on the arguments of the tool function, after you save the code
 # Adding type to arguments and return value will help the system show the types properly
@@ -27,9 +28,6 @@ from promptflow.core import tool
 def flow_entry_copilot_assistants(
     chat_input: str, stream=False, chat_history: list = [], context: str = None
 ) -> ChatResponse:
-    print("hello in entry")
-    from chat import chat_completion
-
     # json parse context as dict
     context = json.loads(context) if context else {}
 
@@ -56,9 +54,7 @@ def flow_entry_copilot_assistants(
             print(r)
             print("\n")
     else:
-        result = chat_completion(
-            conversation, stream=False, context=context
-        )
+        result = chat_completion(conversation, stream=False, context=context)
         print(result)
 
     return ChatResponse(
