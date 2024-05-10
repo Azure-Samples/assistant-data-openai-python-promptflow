@@ -2,10 +2,6 @@ import json
 import argparse
 import logging
 
-# set environment variables before importing any other code (in particular the openai module)
-from dotenv import load_dotenv
-load_dotenv()
-
 import os
 import pandas as pd
 from pprint import pprint
@@ -30,6 +26,9 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 from copilot_sdk_flow.entry import flow_entry_copilot_assistants
+
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def get_model_config(evaluation_endpoint, evaluation_model):
