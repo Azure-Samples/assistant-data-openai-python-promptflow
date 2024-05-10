@@ -30,8 +30,8 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
     parser.add_argument(
         "--flow-path",
         help="Path to the flow",
-        required=True,
         type=str,
+        default=os.path.join(os.path.dirname(__file__), "copilot_sdk_flow"),
     )
     parser.add_argument(
         "--aoai-connection-name",
