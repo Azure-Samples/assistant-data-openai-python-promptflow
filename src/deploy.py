@@ -1,4 +1,5 @@
 """Deploy a flow to Azure AI."""
+
 import os
 from typing import List
 
@@ -17,6 +18,7 @@ from azure.ai.ml.entities import (
 )
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -47,7 +49,7 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
         "--endpoint-name",
         help="endpoint name to use when deploying or invoking the flow",
         type=str,
-        default="assistants-flow-endpoint",
+        default=os.getenv("AZUREAI_ENDPOINT_NAME"),
     )
     parser.add_argument(
         "--instance-type",
@@ -78,16 +80,18 @@ def get_ml_client() -> MLClient:
         ml_client = MLClient.from_config()
     else:
         # if using environment variables
-        logging.info(f"Connecting to Azure AI project {os.environ.get('AZURE_AI_PROJECT_NAME')}...")
+        logging.info(
+            f"Connecting to Azure AI project {os.environ.get('AZUREAI_PROJECT_NAME')}..."
+        )
         ml_client = MLClient(
             credential=DefaultAzureCredential(),
             subscription_id=os.environ.get("AZURE_SUBSCRIPTION_ID"),
             resource_group_name=os.environ.get("AZURE_RESOURCE_GROUP"),
-            workspace_name=os.environ.get("AZURE_AI_PROJECT_NAME"),
+            workspace_name=os.environ.get("AZUREAI_PROJECT_NAME"),
         )
-    
+
     # test the client before going further
-    ml_client.workspaces.get(os.environ.get("AZURE_AI_PROJECT_NAME"))
+    ml_client.workspaces.get(os.environ.get("AZUREAI_PROJECT_NAME"))
     return ml_client
 
 
@@ -116,16 +120,18 @@ def main(cli_args: List[str] = None):
     )
     logging.info(f"Will create endpoint: {endpoint}")
 
-    model=Model(
-        name="copilot_flow_model",
-        path=args.flow_path, # path to promptflow folder
-        properties=[ # this enables the chat interface in the endpoint test tab
-            ["azureml.promptflow.source_flow_id", "basic-chat"],
-            ["azureml.promptflow.mode", "chat"],
-            ["azureml.promptflow.chat_input", "chat_input"],
-            ["azureml.promptflow.chat_output", "reply"]
-        ]
-    ),
+    model = (
+        Model(
+            name="copilot_flow_model",
+            path=args.flow_path,  # path to promptflow folder
+            properties=[  # this enables the chat interface in the endpoint test tab
+                ["azureml.promptflow.source_flow_id", "basic-chat"],
+                ["azureml.promptflow.mode", "chat"],
+                ["azureml.promptflow.chat_input", "chat_input"],
+                ["azureml.promptflow.chat_output", "reply"],
+            ],
+        ),
+    )
     logging.info("Packaged flow as a model for deployment")
 
     # create an environment for the deployment
@@ -155,12 +161,15 @@ def main(cli_args: List[str] = None):
     # at deployment time, environment variables will be resolved from the connections
     environment_variables = {
         # those first variables are drawing from the hub connections
-        "AZURE_OPENAI_ENDPOINT": os.getenv("AZURE_OPENAI_ENDPOINT") or "${{"+connection_string+"/target}}",
-        "AZURE_OPENAI_API_KEY": os.getenv("AZURE_OPENAI_API_KEY") or "${{"+connection_string+"/credentials/key}}",
+        "AZURE_OPENAI_ENDPOINT": os.getenv("AZURE_OPENAI_ENDPOINT")
+        or "${{" + connection_string + "/target}}",
+        "AZURE_OPENAI_API_KEY": os.getenv("AZURE_OPENAI_API_KEY")
+        or "${{" + connection_string + "/credentials/key}}",
         # the remaining ones can be set based on local environment variables
         "AZURE_OPENAI_ASSISTANT_ID": os.getenv("AZURE_OPENAI_ASSISTANT_ID"),
-        "AZURE_OPENAI_API_VERSION": os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
-        "AZURE_OPENAI_CHAT_MODEL": os.getenv("AZURE_OPENAI_CHAT_MODEL"),
+        "AZURE_OPENAI_API_VERSION": os.getenv(
+            "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
+        ),
         "AZURE_OPENAI_CHAT_DEPLOYMENT": os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
     }
 
