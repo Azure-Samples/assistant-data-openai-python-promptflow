@@ -21,7 +21,6 @@ from azure.ai.ml.entities import (
     Project,  # TODO: need to replace with Project
     AzureOpenAIConnection,
     AzureAISearchConnection,
-    ApiKeyConfiguration,
 )
 
 from typing import List, Callable, Dict, Any, Optional, Union
@@ -628,14 +627,16 @@ def build_environment(environment_config, ai_project, env_file_path):
         logging.info(f"Getting connection {name}...")
 
         # get connection
-        connection = ml_client.connections.get(name)
+        connection = ml_client.connections.get(name, populate_secrets=True)
+        ml_client.connections.get
         print(connection.__dict__)
         if suffix == "target":
             # get target endpoint
             dotenv_vars[key] = connection.target
         elif suffix == "credentials/key":
             # get key itself
-            value = connection.credentials.get(key="api_key")
+            # value = connection.credentials.get(key="api_key")
+            value = connection.api_key
             dotenv_vars[key] = value or ""
             if value is None:
                 logging.error(f"Key {name} not found in connection {conn_str}")
