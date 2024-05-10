@@ -3,6 +3,7 @@ import pathlib
 import argparse
 import logging
 import sys
+from functools import partial
 
 # set environment variables before importing any other code (in particular the openai module)
 from dotenv import load_dotenv
@@ -23,7 +24,7 @@ from promptflow.evals.evaluators import (
     RelevanceEvaluator,
     SimilarityEvaluator,
     QAEvaluator,
-    ChatEvaluator,
+    # ChatEvaluator,
 )
 
 from azure.ai.ml import MLClient
@@ -31,6 +32,34 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 # local imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from copilot_sdk_flow.entry import flow_entry_copilot_assistants
+import time
+
+
+def latency_wrapper(completion_func, *args, **kwargs):
+    """Wrapper function for latency evaluation."""
+    start_time = time.time()
+    result = completion_func(*args, **kwargs)
+    latency = time.time() - start_time
+    return {"latency": latency, **result}
+
+
+class CustomFieldEvaluator:
+    def __init__(self, metric_name: str):
+        self.metric_name = metric_name
+
+    def __call__(self, *, value: str, **kwargs):
+        """Returns a value as metric.
+
+        :param value: The value to be returned (from chat completion outputs).
+        :type value: str
+        :return: The value as float.
+        :rtype: dict
+        """
+
+        # Run the evaluation flow
+        return {self.metric_name: value}
+
 
 def get_model_config(evaluation_model):
     """Get the model configuration for the evaluation."""
@@ -58,11 +87,11 @@ def get_model_config(evaluation_model):
 
 
 def run_evaluation(
-    predictions_path,
+    completion_func,
     evaluation_name,
     evaluation_model_config,
+    evaluation_data_path,
     metrics,
-    completion_func,
     output_path=None,
 ):
     """Run the evaluation routine."""
@@ -76,7 +105,7 @@ def run_evaluation(
             # fields in the completion_func return dict (target.*)
             # or fields in the input data (data.*)
             evaluators_config[metric_name] = {
-                "question": "${data.question}",
+                "question": "${data.chat_input}",
                 "answer": "${target.reply}",
             }
         elif metric_name == "f1score":
@@ -88,7 +117,7 @@ def run_evaluation(
         elif metric_name == "fluency":
             evaluators[metric_name] = FluencyEvaluator(evaluation_model_config)
             evaluators_config[metric_name] = {
-                "question": "${data.question}",
+                "question": "${data.chat_input}",
                 "answer": "${target.reply}",
             }
         elif metric_name == "groundedness":
@@ -107,33 +136,37 @@ def run_evaluation(
         elif metric_name == "similarity":
             evaluators[metric_name] = SimilarityEvaluator(evaluation_model_config)
             evaluators_config[metric_name] = {
-                "question": "${data.question}",
+                "question": "${data.chat_input}",
                 "answer": "${target.reply}",
                 "ground_truth": "${data.ground_truth}",
             }
         elif metric_name == "qa":
             evaluators[metric_name] = QAEvaluator(evaluation_model_config)
             evaluators_config[metric_name] = {
-                "question": "${data.question}",
+                "question": "${data.chat_input}",
                 "answer": "${target.reply}",
                 "context": "${target.context}",
                 "ground_truth": "${data.ground_truth}",
             }
         elif metric_name == "latency":
-            raise NotImplementedError("Latency evaluation is not yet implemented")
+            completion_func = partial(latency_wrapper, completion_func)
+            evaluators[metric_name] = CustomFieldEvaluator("latency")
+            evaluators_config[metric_name] = {
+                "latency": "${target.latency}",
+            }
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
     logging.info(
-        f"Running evaluation name={evaluation_name} on predictions: {predictions_path}"
+        f"Running evaluation name={evaluation_name} on dataset {evaluation_data_path}"
     )
 
     result = evaluate(
         target=completion_func,
         evaluation_name=evaluation_name,
-        data=predictions_path,
         evaluators=evaluators,
         evaluator_config=evaluators_config,
+        data=evaluation_data_path,
     )
 
     tabular_result = pd.DataFrame(result.get("rows"))
@@ -148,10 +181,9 @@ def main():
     # create argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--predictions",
-        help="Path to JSONL file containing predictions (and groundtruth if needed)",
+        "--evaluation-data-path",
+        help="Path to JSONL file containing evaluation dataset",
         required=True,
-        type=str,
     )
     parser.add_argument(
         "--evaluation-name",
@@ -189,6 +221,11 @@ def main():
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+    # remove logging from some dependencies
+    logging.getLogger("azure.core").setLevel(logging.ERROR)
+    logging.getLogger("azure.identity").setLevel(logging.ERROR)
+    logging.getLogger("azure.monitor").setLevel(logging.ERROR)
+
     logging.info(f"Running script with arguments: {args}")
 
     # get a model config for evaluation
@@ -196,9 +233,10 @@ def main():
 
     # run the evaluation routine
     result, tabular_result = run_evaluation(
-        args.predictions,
+        completion_func=flow_entry_copilot_assistants,
         evaluation_name=args.evaluation_name,
         evaluation_model_config=eval_model_config,
+        evaluation_data_path=args.evaluation_data_path,
         metrics=args.metrics,
     )
 
