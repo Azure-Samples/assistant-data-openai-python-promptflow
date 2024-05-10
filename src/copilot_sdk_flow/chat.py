@@ -15,6 +15,7 @@ from promptflow.tracing import trace
 # local imports
 import sys
 
+# TODO: using sys.path as hotfix to be able to run the script from 3 different locations
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 from functions.query_order_data import query_order_data
 

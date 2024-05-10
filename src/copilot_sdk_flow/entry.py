@@ -22,6 +22,7 @@ from promptflow.core import tool
 import os
 import sys
 
+# TODO: using sys.path as hotfix to be able to run the script from 3 different locations
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 from chat import chat_completion
 

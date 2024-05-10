@@ -24,10 +24,12 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 # local imports
 import sys
 
+# TODO: using sys.path as hotfix to be able to run the script from 3 different locations
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 from copilot_sdk_flow.entry import flow_entry_copilot_assistants
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
