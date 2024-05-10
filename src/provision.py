@@ -1,14 +1,4 @@
 """Provision Azure AI resources for you."""
-
-"""
-- script can fail in certain types
-    - sub id has a typo
-    - dotenv is appending, not overwriting
-- parameter --config is confusing, use --spec instead?
-- use a combination of config.json
-- upgrade to azure-ai-ml
-
-"""
 import logging
 import os
 import sys
@@ -601,21 +591,26 @@ def build_environment(environment_config, ai_project, env_file_path):
         credential=DefaultAzureCredential(),
     )
 
-    with open(env_file_path, "a") as f:
-        logging.info(f"Writing AI Studio references as env vars")
-        f.write(f"AZURE_SUBSCRIPTION_ID={ai_project.subscription_id}\n")
-        f.write(f"AZURE_RESOURCE_GROUP={ai_project.resource_group_name}\n")
-        f.write(f"AZURE_AI_HUB_NAME={ai_project.hub_name}\n")
-        f.write(f"AZURE_AI_PROJECT_NAME={ai_project.project_name}\n")
+    # load dotenv vars as a dictionary
+    from dotenv import dotenv_values
+
+    dotenv_vars = dotenv_values(
+        dotenv_path=env_file_path,
+        verbose=False,
+    )
+
+    # overwrite values
+    dotenv_vars["AZURE_SUBSCRIPTION_ID"] = ai_project.subscription_id
+    dotenv_vars["AZURE_RESOURCE_GROUP"] = ai_project.resource_group_name
+    dotenv_vars["AZURE_AI_HUB_NAME"] = ai_project.hub_name
+    dotenv_vars["AZURE_AI_PROJECT_NAME"] = ai_project.project_name
 
     for key in environment_config.variables.keys():
         conn_str = environment_config.variables[key]
 
         # write constants directly
         if not conn_str.startswith("azureml://"):
-            with open(env_file_path, "a") as f:
-                logging.info(f"Writing {key} to {env_file_path}")
-                f.write(f"{key}={conn_str}\n")
+            dotenv_vars[key] = conn_str
             continue
 
         # regex extract connection name and type from
@@ -637,10 +632,11 @@ def build_environment(environment_config, ai_project, env_file_path):
         print(connection.__dict__)
         if suffix == "target":
             # get target endpoint
-            value = connection.target
+            dotenv_vars[key] = connection.target
         elif suffix == "credentials/key":
             # get key itself
             value = connection.credentials.get(key="api_key")
+            dotenv_vars[key] = value or ""
             if value is None:
                 logging.error(f"Key {name} not found in connection {conn_str}")
                 continue
@@ -649,9 +645,10 @@ def build_environment(environment_config, ai_project, env_file_path):
                 f"Unsupported connection string: {conn_str} (expecting suffix /target or /credentials/key, got {suffix})"
             )
 
-        with open(env_file_path, "a") as f:
-            logging.info(f"Writing {key} to {env_file_path}")
-            f.write(f"{key}={value}\n")
+    # write to file
+    with open(env_file_path, "w") as f:
+        for key in dotenv_vars:
+            f.write(f"{key}={dotenv_vars[key]}\n")
 
 
 def main():
