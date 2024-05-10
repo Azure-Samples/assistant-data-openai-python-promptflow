@@ -106,7 +106,7 @@ the role "Cognitive Services User" to the Azure OpenAI Instance:
     az role assignment create \
             --role "f2dc8367-1007-4938-bd23-fe263f013447" \
             --assignee-object-id "$OBJECT_ID" \
-            --scope /subscriptions/"$AZURE_SUBSCRIPTION_ID"/resourceGroups/"$AZURE_RESOURCE_GROUP"/ \
+            --scope /subscriptions/"$AZURE_SUBSCRIPTION_ID"/resourceGroups/"$AZURE_RESOURCE_GROUP" \
             --assignee-principal-type User
     ```
 
