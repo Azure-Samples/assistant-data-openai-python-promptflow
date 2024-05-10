@@ -112,13 +112,17 @@ def main(cli_args: List[str] = None):
     client = get_ml_client()
 
     # specify the endpoint creation settings
-    endpoint = ManagedOnlineEndpoint(
-        name=args.endpoint_name,
-        properties={
-            "enforce_access_to_default_secret_stores": "enabled"  # if you want secret injection support
-        },
-    )
-    logging.info(f"Will create endpoint: {endpoint}")
+    try:
+        endpoint = client.online_endpoints.get(args.endpoint_name)
+        logging.info(f"Found existing endpoint: {args.endpoint_name}")
+    except:
+        logging.info(f"Endpoint {args.endpoint_name} not found, creating a new one...")
+        endpoint = ManagedOnlineEndpoint(
+            name=args.endpoint_name,
+            properties={
+                "enforce_access_to_default_secret_stores": "enabled"  # if you want secret injection support
+            },
+        )
 
     model = (
         Model(
