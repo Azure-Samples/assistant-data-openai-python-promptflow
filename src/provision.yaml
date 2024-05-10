@@ -24,10 +24,10 @@ aoai:
   deployments:
     - name: "gpt-35-turbo"
       model: "gpt-35-turbo"
-      version: "0301" # if you don't know, comment this line and we'll pick default
+      # version: "0301" # if you don't know, comment this line and we'll pick default
     - name: "text-embedding-ada-002"
       model: "text-embedding-ada-002"
-      version: "2" # if you don't know, comment this line and we'll pick default
+      # version: "2" # if you don't know, comment this line and we'll pick default
 
 environment:
   # below will be used for --export-env argument
