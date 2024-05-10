@@ -225,8 +225,8 @@ def chat_completion(
             "Using key-based authentification, instead we recommend using Azure AD authentification instead."
         )
         aoai_client = AzureOpenAI(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
             api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
         )
     else:
@@ -236,7 +236,7 @@ def chat_completion(
             credential, "https://cognitiveservices.azure.com/.default"
         )
         aoai_client = AzureOpenAI(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             api_version="2024-02-15-preview",
             azure_ad_token_provider=token_provider,
         )
@@ -252,10 +252,10 @@ def chat_completion(
 
     # Get the assistant from the environment variables
     logging.info(
-        f"Using assistant_id from environment variables: {os.getenv('AZURE_OPENAI_ASSISTANT_ID')}"
+        f"Using assistant_id from environment variables: {os.environ['AZURE_OPENAI_ASSISTANT_ID']}"
     )
     assistant = trace(aoai_client.beta.assistants.retrieve)(
-        os.getenv("AZURE_OPENAI_ASSISTANT_ID")
+        os.environ["AZURE_OPENAI_ASSISTANT_ID"]
     )
 
     # Catch up with a pre-existing thread (id given in the context)
