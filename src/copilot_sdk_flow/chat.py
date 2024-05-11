@@ -11,12 +11,11 @@ import asyncio
 from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from promptflow.tracing import trace
-from dotenv import load_dotenv
-from promptflow.tracing import start_trace
 
 # local imports
 import sys
 
+# TODO: using sys.path as hotfix to be able to run the script from 3 different locations
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 from functions.query_order_data import query_order_data
 
@@ -222,14 +221,14 @@ def chat_completion(
     assert not missing_env_vars, f"Missing environment variables: {missing_env_vars}"
 
     # create an AzureOpenAI client using AAD or key based auth
-    if "AZURE_OPENAI_KEY" in os.environ:
+    if "AZURE_OPENAI_API_KEY" in os.environ:
         logging.warning(
             "Using key-based authentification, instead we recommend using Azure AD authentification instead."
         )
         aoai_client = AzureOpenAI(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            api_key=os.getenv("AZURE_OPENAI_KEY"),
-            api_version="2024-02-15-preview",
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
         )
     else:
         logging.info("Using Azure AD authentification [recommended]")
@@ -238,7 +237,7 @@ def chat_completion(
             credential, "https://cognitiveservices.azure.com/.default"
         )
         aoai_client = AzureOpenAI(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             api_version="2024-02-15-preview",
             azure_ad_token_provider=token_provider,
         )
@@ -254,10 +253,10 @@ def chat_completion(
 
     # Get the assistant from the environment variables
     logging.info(
-        f"Using assistant_id from environment variables: {os.getenv('AZURE_OPENAI_ASSISTANT_ID')}"
+        f"Using assistant_id from environment variables: {os.environ['AZURE_OPENAI_ASSISTANT_ID']}"
     )
     assistant = trace(aoai_client.beta.assistants.retrieve)(
-        os.getenv("AZURE_OPENAI_ASSISTANT_ID")
+        os.environ["AZURE_OPENAI_ASSISTANT_ID"]
     )
 
     # Catch up with a pre-existing thread (id given in the context)
@@ -300,34 +299,3 @@ def chat_completion(
         max_waiting_time=max_waiting_time,
     )
     return runner.run_loop(run)
-
-
-def main():
-    """Test the chat completion function."""
-    load_dotenv(override=True)
-    start_trace()
-
-    # turn on logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-
-    # try a functions combo (without RAG)
-    response = chat_completion(
-        messages=[
-            {
-                "role": "user",
-                "content": "avg sales in jan",
-            }
-        ],
-    )
-
-    # test expected format
-    from openai.types.chat import ChatCompletion
-
-    print(ChatCompletion.model_validate(response))
-
-
-if __name__ == "__main__":
-    main()
