@@ -61,10 +61,13 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
 #################################
 
 
-class AzureResourceScope(BaseModel):
+class AzureScopedResource(BaseModel):
     subscription_id: str
     resource_group_name: str
     region: str
+
+    def scope(self) -> str:
+        return f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group_name}"
 
     @field_validator("subscription_id", "resource_group_name", "region")
     @classmethod
@@ -76,7 +79,7 @@ class AzureResourceScope(BaseModel):
         return v
 
 
-class ResourceGroup(AzureResourceScope):
+class ResourceGroup(AzureScopedResource):
     def exists(self) -> bool:
         """Check if the resource group exists."""
         # use ResourceManagementClient
@@ -102,7 +105,7 @@ class ResourceGroup(AzureResourceScope):
         return response
 
 
-class AzureAIHub(AzureResourceScope):
+class AzureAIHub(AzureScopedResource):
     hub_name: str
 
     def exists(self) -> bool:
@@ -139,7 +142,7 @@ class AzureAIHub(AzureResourceScope):
         return response
 
 
-class AzureAIProject(AzureResourceScope):
+class AzureAIProject(AzureScopedResource):
     hub_name: str
     project_name: str
 
@@ -182,7 +185,7 @@ class AzureAIProject(AzureResourceScope):
         return response
 
 
-class AzureAISearch(AzureResourceScope):
+class AzureAISearch(AzureScopedResource):
     search_resource_name: str
 
     def exists(self) -> bool:
@@ -221,8 +224,11 @@ class AzureAISearch(AzureResourceScope):
         return search
 
 
-class AzureOpenAIResource(AzureResourceScope):
+class AzureOpenAIResource(AzureScopedResource):
     aoai_resource_name: str
+
+    def scope(self) -> str:
+        return f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{self.aoai_resource_name}"
 
     def exists(self) -> bool:
         """Check if the resource exists."""
