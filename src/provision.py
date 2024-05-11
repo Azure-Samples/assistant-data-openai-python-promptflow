@@ -1,10 +1,11 @@
 """Provision Azure AI resources for you."""
+
 import logging
 import os
 import sys
 import re
 import argparse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from omegaconf import OmegaConf
 from collections import OrderedDict
 
@@ -36,10 +37,10 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
         action="store_true",
     )
     parser.add_argument(
-        "--config",
-        help="yaml config",
-        required=True,
+        "--yaml-spec",
+        help="point to a provision.yaml spec file",
         type=str,
+        default=os.path.join(os.path.dirname(__file__), "provision.yaml"),
     )
     parser.add_argument(
         "--show-only",
@@ -49,7 +50,7 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
     parser.add_argument(
         "--export-env",
         help="Export environment variables into a file",
-        default=None,
+        default=os.path.join(os.path.dirname(__file__), ".env"),
     )
 
     return parser
@@ -60,11 +61,22 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
 #################################
 
 
-class ResourceGroup(BaseModel):
+class AzureResourceScope(BaseModel):
     subscription_id: str
     resource_group_name: str
     region: str
 
+    @field_validator("subscription_id", "resource_group_name", "region")
+    @classmethod
+    def validate_references(cls, v: str) -> str:
+        if "<" in v or ">" in v:
+            raise ValueError(
+                f"Invalid value '{v}', did you forget to provide your own?"
+            )
+        return v
+
+
+class ResourceGroup(AzureResourceScope):
     def exists(self) -> bool:
         """Check if the resource group exists."""
         # use ResourceManagementClient
@@ -90,11 +102,8 @@ class ResourceGroup(BaseModel):
         return response
 
 
-class AzureAIHub(BaseModel):
-    subscription_id: str
-    resource_group_name: str
+class AzureAIHub(AzureResourceScope):
     hub_name: str
-    region: str
 
     def exists(self) -> bool:
         """Check if the resource exists."""
@@ -130,12 +139,9 @@ class AzureAIHub(BaseModel):
         return response
 
 
-class AzureAIProject(BaseModel):
-    subscription_id: str
-    resource_group_name: str
+class AzureAIProject(AzureResourceScope):
     hub_name: str
     project_name: str
-    region: str
 
     def exists(self) -> bool:
         """Check if the resource exists."""
@@ -176,11 +182,8 @@ class AzureAIProject(BaseModel):
         return response
 
 
-class AzureAISearch(BaseModel):
-    subscription_id: str
-    resource_group_name: str
+class AzureAISearch(AzureResourceScope):
     search_resource_name: str
-    region: str
 
     def exists(self) -> bool:
         """Check if the resource exists."""
@@ -218,11 +221,8 @@ class AzureAISearch(BaseModel):
         return search
 
 
-class AzureOpenAIResource(BaseModel):
-    subscription_id: str
-    resource_group_name: str
+class AzureOpenAIResource(AzureResourceScope):
     aoai_resource_name: str
-    region: str
 
     def exists(self) -> bool:
         """Check if the resource exists."""
@@ -601,8 +601,8 @@ def build_environment(environment_config, ai_project, env_file_path):
     # overwrite values
     dotenv_vars["AZURE_SUBSCRIPTION_ID"] = ai_project.subscription_id
     dotenv_vars["AZURE_RESOURCE_GROUP"] = ai_project.resource_group_name
-    dotenv_vars["AZURE_AI_HUB_NAME"] = ai_project.hub_name
-    dotenv_vars["AZURE_AI_PROJECT_NAME"] = ai_project.project_name
+    dotenv_vars["AZUREAI_HUB_NAME"] = ai_project.hub_name
+    dotenv_vars["AZUREAI_PROJECT_NAME"] = ai_project.project_name
 
     for key in environment_config.variables.keys():
         conn_str = environment_config.variables[key]
@@ -667,8 +667,8 @@ def main():
     logging.getLogger("azure.identity").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-    config = OmegaConf.load(args.config)
-    provision_plan = build_provision_plan(config)
+    yaml_spec = OmegaConf.load(args.yaml_spec)
+    provision_plan = build_provision_plan(yaml_spec)
 
     # save ai_project for commodity
     ai_project = provision_plan.get_main_ai_project()
@@ -689,7 +689,7 @@ def main():
 
     if args.export_env:
         logging.info(f"Building environment into {args.export_env}")
-        build_environment(config.environment, ai_project, args.export_env)
+        build_environment(yaml_spec.environment, ai_project, args.export_env)
 
 
 if __name__ == "__main__":
