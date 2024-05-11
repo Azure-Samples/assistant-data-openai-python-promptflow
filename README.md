@@ -38,6 +38,37 @@ Include a diagram describing the application (DevDiv is working with Designers o
 
 Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a region during deployment accordingly.
 
+### Installation
+
+1. First, clone the code sample locally:
+
+    ```bash
+    git clone https://github.com/Azure-Samples/assistant-data-openai-python-promptflow
+    cd assistant-data-openai-python-promptflow
+    ```
+
+2. Next, create a new Python virtual environment where we can safely install the SDK packages:
+
+ * On MacOS and Linux run:
+   ```bash
+   python3 --version
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+* On Windows run:
+   ```ps
+   py -3 --version
+   py -3 -m venv .venv
+   .venv\scripts\activate
+   ```
+
+3. Now that your environment is activated, install the SDK packages
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
 ## Quickstart
 
 ### Step 1 : Provision the resources
