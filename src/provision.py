@@ -635,7 +635,6 @@ def build_environment(environment_config, ai_project, env_file_path):
         # get connection
         connection = ml_client.connections.get(name, populate_secrets=True)
         ml_client.connections.get
-        print(connection.__dict__)
         if suffix == "target":
             # get target endpoint
             dotenv_vars[key] = connection.target
