@@ -33,6 +33,10 @@ def main():
     """Create an assistant with a code interpreter tool and a function tool."""
     logging.basicConfig(level=logging.INFO)
 
+    # remove logging of some dependencies
+    logging.getLogger("azure.core").setLevel(logging.WARNING)
+    logging.getLogger("azure.identity").setLevel(logging.WARNING)
+    
     parser = get_arg_parser()
     args = parser.parse_args()
 
