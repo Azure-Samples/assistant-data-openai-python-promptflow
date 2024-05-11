@@ -120,7 +120,7 @@ AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
 To run the flow locally, use `pf` cli:
 
 ```bash
-pf flow test --flow ./copilot_sdk_flow/flow.flex.yaml --inputs question="which month has peak sales in 2023"
+pf flow test --flow ./copilot_sdk_flow/flow.flex.yaml --inputs chat_input="which month has peak sales in 2023"
 ```
 
 You can add `--ui` to run the local test bed.
