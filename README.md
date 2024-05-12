@@ -69,13 +69,14 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
     pip install -r requirements.txt
     ```
 
-### Quickstart
+## Quickstart
 
 ### Step 1 : Provision the resources
 
 Run the following command under root folder of repo. Please install azd if it's not be installed.
+
 ```bash
-azd up
+azd provision
 ```
 
 Once you complete the process, you can find `.env` file under .azure\{env} folder. Your `.env` file should look like this:
@@ -89,30 +90,7 @@ AZURE_OPENAI_ENDPOINT=...
 AZURE_OPENAI_CHAT_DEPLOYMENT=...
 ```
 
-Those environment variables will be required for the following steps to work. You can copy it to the root folder.
-
-To leverage Microsoft Entra ID (AAD) authentification, you'll need to assign to yourself
-the role "Cognitive Services User" to the Azure OpenAI Instance:
-
-1. Find your `OBJECT_ID`:
-
-    ```bash
-    az ad signed-in-user show --query id -o tsv
-    ```
-
-2. Then run the following command to grand permissions:
-
-    ```bash
-    az role assignment create \
-            --role "f2dc8367-1007-4938-bd23-fe263f013447" \
-            --assignee-object-id "$OBJECT_ID" \
-            --scope /subscriptions/"$AZURE_SUBSCRIPTION_ID"/resourceGroups/"$AZURE_RESOURCE_GROUP" \
-            --assignee-principal-type User
-    ```
-
-Alternatively, you can set env var `AZURE_OPENAI_API_KEY` with your api key.
-
-#### Step 2. Create an assistant
+### Step 2. Create an assistant
 
 For the code to run, you need to create an assistant. This means setting up an assistant in your Azure OpenAI resource.
 You will get an assistant id you can inject in the code through an env var to run the assistant.
@@ -133,30 +111,6 @@ AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
 ******************************************************************
 ```
 
-#### Step 3. Run the assistant flow locally
+### Step 3. Deploy
 
-To run the flow locally, use `pf` cli:
-
-```bash
-pf flow test --flow ./src/copilot_sdk_flow/flow.flex.yaml --inputs question="which month has peak sales in 2023"
-```
-
-You can add `--ui` to run the local test bed.
-
-### Step 4. Run an evaluation locally
-
-The evaluation script consists in running the completion function on a groundtruth dataset and evaluate the results.
-
-```bash
-python ./src/evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./data/ground_truth.jsonl --metrics similarity
-```
-
-This will print out the results of the evaluation, as well as a link to the Azure AI Studio to browse the results online.
-
-### Step 5. Deploy the flow in Azure AI Studio
-
-To deploy the flow in your Azure AI project under a managed endpoint, use:
-
-```bash
-python ./src/deploy.py
-```
+work in progress

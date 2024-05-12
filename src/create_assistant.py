@@ -33,6 +33,10 @@ def main():
     """Create an assistant with a code interpreter tool and a function tool."""
     logging.basicConfig(level=logging.INFO)
 
+    # remove logging of some dependencies
+    logging.getLogger("azure.core").setLevel(logging.WARNING)
+    logging.getLogger("azure.identity").setLevel(logging.WARNING)
+    
     parser = get_arg_parser()
     args = parser.parse_args()
 
@@ -78,6 +82,7 @@ def main():
 
     logging.info(f"Creating assistant...")
     assistant = client.beta.assistants.create(
+        name="Contoso Sales Assistant",
         instructions="You are a helpful data analytics assistant helping user answer questions about the contoso sales data.",
         model=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
         tools=[
