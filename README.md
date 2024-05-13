@@ -17,7 +17,7 @@ on an example sales dataset.
 
 ### Architecture Diagram
 
-Include a diagram describing the application (DevDiv is working with Designers on this part)
+![Architecture Digram](images\architecture-diagram-assistant-promptflow.png)
 
 ## Security
 
