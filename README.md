@@ -17,7 +17,7 @@ on an example sales dataset.
 
 ### Architecture Diagram
 
-![Architecture Digram](images\architecture-diagram-assistant-promptflow.png)
+![Architecture Diagram](/images/architecture-diagram-assistant-promptflow.png)
 
 ## Security
 
