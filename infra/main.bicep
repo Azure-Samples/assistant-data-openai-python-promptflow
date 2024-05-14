@@ -7,6 +7,7 @@ param environmentName string
 
 @minLength(1)
 @description('Primary location for all resources')
+@allowed(['australiaeast', 'eastus', 'eastus2', 'francecentral', 'norwayeast', 'swedencentral', 'uksouth'])
 param location string
 
 @description('The Azure resource group where new resources will be deployed')
