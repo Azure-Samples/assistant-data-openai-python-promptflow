@@ -13,7 +13,7 @@ on an example sales dataset.
 
 ### Architecture Diagram
 
-Include a diagram describing the application (DevDiv is working with Designers on this part)
+![Architecture Diagram](images/architecture-diagram-assistant-promptflow.png)
 
 ## Getting Started
 
@@ -63,11 +63,15 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 
 ### Quickstart
 
-### Step 1 : Provision the resources
+## Step 1 : Provision the resources
 
-🚧 placeholder for instructions on azd provision
+Run the following command under root folder of repo. Please install azd if it's not be installed.
 
-Once you complete the process, your `.env` file should look like this:
+```bash
+azd provision
+```
+
+Once you complete the process, you can find `.env` file under .azure\{env} folder. Your `.env` file should look like this:
 
 ```
 AZURE_SUBSCRIPTION_ID=...
@@ -78,91 +82,44 @@ AZURE_OPENAI_ENDPOINT=...
 AZURE_OPENAI_CHAT_DEPLOYMENT=...
 ```
 
-Those environment variables will be required for the following steps to work.
-
-To leverage Microsoft Entra ID (AAD) authentification, you'll need to assign to yourself
-the role "Cognitive Services User" to the Azure OpenAI Instance:
-
-1. Find your `OBJECT_ID`:
-
-    ```bash
-    az ad signed-in-user show --query id -o tsv
-    ```
-
-2. Then run the following command to grand permissions:
-
-    ```bash
-    az role assignment create \
-            --role "f2dc8367-1007-4938-bd23-fe263f013447" \
-            --assignee-object-id "$OBJECT_ID" \
-            --scope /subscriptions/"$SUBSCRIPTION_ID"/resourceGroups/"$RESOURCE_GROUP" \
-            --assignee-principal-type User
-    ```
-
-Alternatively, you can set env var `AZURE_OPENAI_API_KEY` with your api key.
-
-#### Step 2. Create an assistant
+### Step 2. Create an assistant
 
 For the code to run, you need to create an assistant. This means setting up an assistant in your Azure OpenAI resource.
 You will get an assistant id you can inject in the code through an env var to run the assistant.
 
 ```bash
-python ./src/create_assistant.py
+python ./src/create_assistant.py --export-env ./.azure/"$AZURE_ENV_NAME"/.env
 ```
 
-It will print the env var to add to `.env`:
+It will write the assistant id into your `.env` file:
 
 ```
 ******************************************************************
 Successfully created assistant with id: [IDENTIFIER].
-Create an environment variable
+It has been written as an environment variable in .\.azure\[ENVIRONMENT]\.env.
 
-    AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
+AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
 
-to use this assistant in your code. Or write it in your .env file.
 ******************************************************************
 ```
 
-#### Step 3. Run the assistant flow locally
+### Step 3. Deploy
 
-To run the flow locally, use `pf` cli:
-
-```bash
-pf flow test --flow ./src/copilot_sdk_flow/flow.flex.yaml --inputs question="which month has peak sales in 2023"
-```
-
-You can add `--ui` to run the local test bed.
-
-### Step 4. Run an evaluation locally
-
-🚧
-
-### Step 5. Deploy the flow in Azure AI Studio
-
-🚧
-
-### Local Development
-Describe how to run and develop the app locally
+work in progress
 
 ## Costs
 You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
- 
-- [Azure Product] - [plan type] [link to pricing for product](https://azure.microsoft.com/pricing/)
+
+- Azure OpenAI - Standard tier, GPT-4, GPT-35-turbo and Ada models.  [See Pricing](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)
+- Azure AI Search - Basic tier, Semantic Ranker enabled [See Pricing](https://azure.microsoft.com/en-us/pricing/details/search/)
 
 ## Security Guidelines
-
-TODO: team will add the guidelines here for best security practices.
 
 Each template has either [Managed Identity](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview) or Key Vault built in to eliminate the need for developers to manage these credentials. Applications can use managed identities to obtain Microsoft Entra tokens without having to manage any credentials. Additionally, we have added a [GitHub Action tool](https://github.com/microsoft/security-devops-action) that scans the infrastructure-as-code files and generates a report containing any detected issues. To ensure best practices in your repo we recommend anyone creating solutions based on our templates ensure that the [Github secret scanning](https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning) setting is enabled in your repos.
 
 To be secure by design, we require templates in any Microsoft template collections to have the [Github secret scanning](https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning) setting is enabled in your repos.'
 
 ## Resources
-
-(Any additional resources or related projects)
- 
-- Link to supporting information
-- Link to similar sample
 - [Develop Python apps that use Azure AI services](https://learn.microsoft.com/azure/developer/python/azure-ai-for-python-developers)
-- ...
+- Discover more sample apps in the [azd template gallery](https://aka.ms/ai-apps)!
 
