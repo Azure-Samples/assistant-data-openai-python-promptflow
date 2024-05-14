@@ -6,8 +6,8 @@ import argparse
 
 # list of candidate models we need
 CANDIDATE_MODELS = [
-    {"name": "gpt-35-turbo", "version": "1106", "sku": "Standard"},
-    {"name": "gpt-4", "version": "1106-Preview", "sku": "Standard"},
+    {"name": "gpt-35-turbo", "version": "1106", "sku": "Standard", "kind": "OpenAI"},
+    {"name": "gpt-4", "version": "1106-Preview", "sku": "Standard", "kind": "OpenAI"},
 ]
 
 # list of regions in which to look for candidate models
@@ -20,6 +20,26 @@ CANDIDATE_LOCATIONS = [
     "swedencentral",
     "uksouth",
 ]
+
+# copied from https://learn.microsoft.com/en-us/azure/ai-services/openai/quotas-limits
+REGIONAL_QUOTA_LIMITS = {
+    # gpt-4
+    ("australiaeast", "Standard", "gpt-4"): 40,
+    ("eastus", "Standard", "gpt-4"): 0,
+    ("eastus2", "Standard", "gpt-4"): 0,
+    ("francecentral", "Standard", "gpt-4"): 20,
+    ("norwayeast", "Standard", "gpt-4"): 0,
+    ("swedencentral", "Standard", "gpt-4"): 40,
+    ("uksouth", "Standard", "gpt-4"): 0,
+    # gpt-35-turbo
+    ("australiaeast", "Standard", "gpt-35-turbo"): 300,
+    ("eastus", "Standard", "gpt-35-turbo"): 240,
+    ("eastus2", "Standard", "gpt-35-turbo"): 300,
+    ("francecentral", "Standard", "gpt-35-turbo"): 240,
+    ("norwayeast", "Standard", "gpt-35-turbo"): 0,
+    ("swedencentral", "Standard", "gpt-35-turbo"): 300,
+    ("uksouth", "Standard", "gpt-35-turbo"): 240,
+}
 
 
 def fetch_quota(client, locations, models):
@@ -36,20 +56,29 @@ def fetch_quota(client, locations, models):
         print(f"Fetching quotas for the candidate models in {location}")
         for model in client.models.list(location=location):
             for _model in models:
-                if model.model.name == _model["name"] and (
-                    model.model.version == _model["version"] or _model["version"] == "*"
+                if (
+                    model.model.name == _model["name"]
+                    and (
+                        model.model.version == _model["version"]
+                        or _model["version"] == "*"
+                    )
+                    and (model.kind == _model["kind"] or _model["kind"] == "*")
                 ):
                     for sku in model.model.skus:
                         if sku.name == _model["sku"] or _model["sku"] == "*":
-                            # print(model.serialize())
+                            print(model.serialize())
+                            quota = REGIONAL_QUOTA_LIMITS.get(
+                                (location, sku.name, model.model.name), 0
+                            )
                             fetched_quotas_table.append(
                                 {
                                     "model": model.model.name,
                                     "version": model.model.version,
+                                    "kind": model.kind,
                                     "location": location,
                                     "sku": sku.name,
-                                    "max_capacity": sku.capacity.maximum // 100,
-                                    "remaining_capacity": sku.capacity.maximum // 100,
+                                    "quota": quota,
+                                    "remaining_quota": quota,
                                 }
                             )
     return fetched_quotas_table
@@ -123,13 +152,24 @@ def main():
                 and quota["location"] == deployment["location"]
                 and quota["sku"] == deployment["sku"]
             ):
-                quota["remaining_capacity"] -= deployment["used_capacity"]
+                quota["remaining_quota"] -= deployment["used_capacity"]
+                if "used_at" not in quota:
+                    quota["used_at"] = []
+                quota["used_at"].append(
+                    deployment["deployment"]
+                    + "@"
+                    + deployment["version"]
+                    + ":"
+                    + str(deployment["used_capacity"])
+                )
 
     # show table in a readable markdown format
-    print("Model \t\t Version \t Location \t\t SKU \t Max Capacity \t Remaining Capacity")
+    print(
+        "Model \t Version \t Kind \t Location \t\SKU \t Quota \t Remaining Quota \t Used at"
+    )
     for quota in fetched_quotas_table:
         print(
-            f"{quota['model']} \t\t {quota['version']} \t\t {quota['location']} \t {quota['sku']} \t {quota['max_capacity']} \t\t {quota['remaining_capacity']}"
+            f"{quota['model']} \t {quota['version']} \t {quota['kind']} \t {quota['location']} \t {quota['sku']} \t {quota['quota']} \t {quota['remaining_quota']} \t {quota.get('used_at', [])}"
         )
 
 
