@@ -63,7 +63,9 @@ You can also try running our experimental script to check quota in your subscrip
 python ./check_quota.py --subscription-id [SUBSCRIPTION_ID]
 ```
 
-It will show a table of the regions where you have `gpt-35-turbo` available. Note: this script is a tentative to help locating quota, but it might provide numbers that are not accurate. The [Azure OpenAI portal](https://oai.azure.com/) would be the source of truth.
+> Note: this script is a tentative to help locating quota, but it might provide numbers that are not accurate. The [Azure OpenAI portal](https://oai.azure.com/) would be the source of truth.
+
+It will show a table of the regions where you have `gpt-35-turbo` available.
 
 ```
 +--------------+---------+--------+---------------+----------+-------+-----------------+
