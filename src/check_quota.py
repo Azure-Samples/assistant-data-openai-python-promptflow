@@ -2,23 +2,7 @@ import os
 import logging
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
-import json
-
-# Initialize credentials
-credential = DefaultAzureCredential()
-
-client = CognitiveServicesManagementClient(
-    credential=DefaultAzureCredential(),
-    subscription_id=os.getenv("AZURE_SUBSCRIPTION_ID"),
-)
-
-# # Get the quota for a specific model (e.g., GPT-4-Turbo)
-# model_name = "GPT-4-Turbo"
-
-# # Retrieve the quota
-# quota = service_client.models.get_quota(subscription_id, region, model_name)
-
-# print(f"Quota for {model_name} in {region}: {quota.tpm} TPM")
+import argparse
 
 # list of candidate models we need
 CANDIDATE_MODELS = [
@@ -79,6 +63,7 @@ def fetch_deployments(client):
     deployments_table = []
 
     for account in client.accounts.list():
+        print(f"Fetching deployments for the account {account.name}...")
         resource_group = account.id.split("/")[4]
         for deployment in client.deployments.list(
             resource_group_name=resource_group,
@@ -99,6 +84,22 @@ def fetch_deployments(client):
 
 
 def main():
+    """Main function to run the script."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--subscription-id",
+        help="Azure subscription id",
+        type=str,
+        default=os.getenv("AZURE_SUBSCRIPTION_ID"),
+    )
+    args = parser.parse_args()
+
+    # get a client
+    client = CognitiveServicesManagementClient(
+        credential=DefaultAzureCredential(),
+        subscription_id=args.subscription_id,
+    )
+
     # Fetch the quota for the candidate models in the candidate locations
     print("Fetching quotas for the candidate models in the candidate locations")
     fetched_quotas_table = fetch_quota(client, CANDIDATE_LOCATIONS, CANDIDATE_MODELS)
