@@ -69,7 +69,7 @@ module ai 'core/host/ai-environment.bicep' = {
         model: {
           format: 'OpenAI'
           name: 'gpt-35-turbo'
-          version: '0613'
+          version: '1106' // use this version for Assistant API to work
         }
         sku: {
           name: 'Standard'
