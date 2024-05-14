@@ -6,12 +6,8 @@ on an example sales dataset.
 
 ## Features
 
-**For Developers**
 * An implementation of the Assistants API using functions and code interpreter
 * Deployment available via GitHub actions or Azure AI SDK
-* ...
-
-**For Users**
 * An agent performing data analytics to answer questions in natural language
 
 
@@ -19,9 +15,6 @@ on an example sales dataset.
 
 ![Architecture Diagram](images/architecture-diagram-assistant-promptflow.png)
 
-## Security
-
-(Document security aspects and best practices per template configuration)
 
 ## Getting Started
 
@@ -71,14 +64,11 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 
 ## Quickstart
 
-### Step 1 : Provision the resources
-
-Run the following command under root folder of repo. Please install azd if it's not be installed.
+## Step 1 : Provision the resources
 
 ```bash
 azd provision
 ```
-
 Once you complete the process, you can find `.env` file under .azure\{env} folder. Your `.env` file should look like this:
 
 ```
@@ -114,3 +104,19 @@ AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
 ### Step 3. Deploy
 
 work in progress
+
+## Costs
+You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
+
+- Azure OpenAI - Standard tier, GPT-4, GPT-35-turbo and Ada models.  [See Pricing](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)
+- Azure AI Search - Basic tier, Semantic Ranker enabled [See Pricing](https://azure.microsoft.com/en-us/pricing/details/search/)
+
+## Security Guidelines
+
+Each template has either [Managed Identity](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview) or Key Vault built in to eliminate the need for developers to manage these credentials. Applications can use managed identities to obtain Microsoft Entra tokens without having to manage any credentials. Additionally, we have added a [GitHub Action tool](https://github.com/microsoft/security-devops-action) that scans the infrastructure-as-code files and generates a report containing any detected issues. To ensure best practices in your repo we recommend anyone creating solutions based on our templates ensure that the [Github secret scanning](https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning) setting is enabled in your repos.
+
+To be secure by design, we require templates in any Microsoft template collections to have the [Github secret scanning](https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning) setting is enabled in your repos.'
+
+## Resources
+- [Develop Python apps that use Azure AI services](https://learn.microsoft.com/azure/developer/python/azure-ai-for-python-developers)
+- Discover more sample apps in the [azd template gallery](https://aka.ms/ai-apps)!
