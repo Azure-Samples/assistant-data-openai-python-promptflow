@@ -66,7 +66,7 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 3. Now that your environment is activated, install the SDK packages
 
     ```bash
-    pip install -r requirements.txt
+    pip install -r ./src/requirements.txt
     ```
 
 ## Quickstart
