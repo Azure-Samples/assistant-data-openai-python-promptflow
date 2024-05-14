@@ -1,13 +1,13 @@
 import os
-import logging
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
 import argparse
+from tabulate import tabulate
 
 # list of candidate models we need
 CANDIDATE_MODELS = [
     {"name": "gpt-35-turbo", "version": "1106", "sku": "Standard", "kind": "OpenAI"},
-    {"name": "gpt-4", "version": "1106-Preview", "sku": "Standard", "kind": "OpenAI"},
+    # {"name": "gpt-4", "version": "1106-Preview", "sku": "Standard", "kind": "OpenAI"},
 ]
 
 # list of regions in which to look for candidate models
@@ -66,7 +66,7 @@ def fetch_quota(client, locations, models):
                 ):
                     for sku in model.model.skus:
                         if sku.name == _model["sku"] or _model["sku"] == "*":
-                            print(model.serialize())
+                            # print(model.serialize())
                             quota = REGIONAL_QUOTA_LIMITS.get(
                                 (location, sku.name, model.model.name), 0
                             )
@@ -163,14 +163,8 @@ def main():
                     + str(deployment["used_capacity"])
                 )
 
-    # show table in a readable markdown format
-    print(
-        "Model \t Version \t Kind \t Location \t\SKU \t Quota \t Remaining Quota \t Used at"
-    )
-    for quota in fetched_quotas_table:
-        print(
-            f"{quota['model']} \t {quota['version']} \t {quota['kind']} \t {quota['location']} \t {quota['sku']} \t {quota['quota']} \t {quota['remaining_quota']} \t {quota.get('used_at', [])}"
-        )
+    # show table in a readable format
+    print(tabulate(fetched_quotas_table, headers="keys", tablefmt="pretty"))
 
 
 if __name__ == "__main__":

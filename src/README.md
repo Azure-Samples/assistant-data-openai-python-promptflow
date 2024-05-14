@@ -53,6 +53,31 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
     pip install -r requirements.txt
     ```
 
+### Before your start: check your quota
+
+To ensure you have quota to provision `gpt-35-turbo` version `1106`, you can either go to [oai.azure.com](https://oai.azure.com/) and check the Quota page in a given region.
+
+You can also try running our experimental script to check quota in your subscription:
+
+```bash
+python ./check_quota.py --subscription-id [SUBSCRIPTION_ID]
+```
+
+It will show a table of the regions where you have `gpt-35-turbo` available.
+
+```
++--------------+---------+--------+---------------+----------+-------+-----------------+
+|    model     | version |  kind  |   location    |   sku    | quota | remaining_quota |
++--------------+---------+--------+---------------+----------+-------+-----------------+
+| gpt-35-turbo |  1106   | OpenAI | australiaeast | Standard |  300  |       270       |
+| gpt-35-turbo |  1106   | OpenAI | francecentral | Standard |  240  |        0        |
+| gpt-35-turbo |  1106   | OpenAI | swedencentral | Standard |  300  |       150       |
+| gpt-35-turbo |  1106   | OpenAI |    uksouth    | Standard |  240  |       180       |
++--------------+---------+--------+---------------+----------+-------+-----------------+
+```
+
+Pick any region with remaining_quota above 30.
+
 ### Step 1 : Provision the resources
 
 The provision.py script will help provision the resources you need to run this sample. You **must** specify your desired resources in the provision.yaml - there are notes in that file to help you. The script will check whether the resources you specified exist, otherwise it will create them. It will then construct a `.env` for you that references the provisioned or attached resources, including your keys. Once the provisioning is complete, you'll be ready to move to next step.
