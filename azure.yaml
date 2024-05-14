@@ -1,0 +1,5 @@
+name: assistant-data-openai-python-promptflow
+metadata:
+  template: assistant-data-openai-python-promptflow@0.0.1
+infra:
+    provider: "bicep"

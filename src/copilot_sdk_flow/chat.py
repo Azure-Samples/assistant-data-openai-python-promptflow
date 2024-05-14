@@ -1,5 +1,3 @@
-# enable type annotation syntax on Python versions earlier than 3.9
-from __future__ import annotations
 from typing import List
 
 import time
@@ -17,6 +15,7 @@ from promptflow.tracing import trace
 # local imports
 import sys
 
+# TODO: using sys.path as hotfix to be able to run the script from 3 different locations
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 from functions.query_order_data import query_order_data
 
@@ -97,7 +96,7 @@ class AssistantThreadRunner(object):
             elif self.run.status in ["cancelled", "expired", "failed"]:
                 raise ValueError(f"Run failed with status: {self.run.status}")
             elif self.run.status in ["in_progress", "queued"]:
-                time.sleep(1)
+                time.sleep(0.25)
             else:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
@@ -157,7 +156,7 @@ class AssistantThreadRunner(object):
                     },
                     "context": {
                         "thread_id": self.thread.id,
-                        "steps": self.messages_during_loop,
+                        # "steps": self.messages_during_loop,
                     },
                 }
             ],
@@ -222,14 +221,14 @@ def chat_completion(
     assert not missing_env_vars, f"Missing environment variables: {missing_env_vars}"
 
     # create an AzureOpenAI client using AAD or key based auth
-    if "AZURE_OPENAI_KEY" in os.environ:
+    if "AZURE_OPENAI_API_KEY" in os.environ:
         logging.warning(
             "Using key-based authentification, instead we recommend using Azure AD authentification instead."
         )
         aoai_client = AzureOpenAI(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            api_key=os.getenv("AZURE_OPENAI_KEY"),
-            api_version="2024-02-15-preview",
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
         )
     else:
         logging.info("Using Azure AD authentification [recommended]")
@@ -238,7 +237,7 @@ def chat_completion(
             credential, "https://cognitiveservices.azure.com/.default"
         )
         aoai_client = AzureOpenAI(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             api_version="2024-02-15-preview",
             azure_ad_token_provider=token_provider,
         )
@@ -254,27 +253,36 @@ def chat_completion(
 
     # Get the assistant from the environment variables
     logging.info(
-        f"Using assistant_id from environment variables: {os.getenv('AZURE_OPENAI_ASSISTANT_ID')}"
+        f"Using assistant_id from environment variables: {os.environ['AZURE_OPENAI_ASSISTANT_ID']}"
     )
     assistant = trace(aoai_client.beta.assistants.retrieve)(
-        os.getenv("AZURE_OPENAI_ASSISTANT_ID")
+        os.environ["AZURE_OPENAI_ASSISTANT_ID"]
     )
 
     # Catch up with a pre-existing thread (id given in the context)
     if "thread_id" in context:
         logging.info(f"Using thread_id from context: {context['thread_id']}")
         thread = trace(aoai_client.beta.threads.retrieve)(context["thread_id"])
+
+        # Add last message in the thread
+        logging.info("Adding last message in the thread")
+        _ = trace(aoai_client.beta.threads.messages.create)(
+            thread_id=thread.id,
+            role=messages[-1]["role"],
+            content=messages[-1]["content"],
+        )
     else:
         logging.info(f"Creating a new thread")
         thread = trace(aoai_client.beta.threads.create)()
 
-    # Add last message in the thread
-    logging.info("Adding last message in the thread")
-    _ = trace(aoai_client.beta.threads.messages.create)(
-        thread_id=thread.id,
-        role=messages[-1]["role"],
-        content=messages[-1]["content"],
-    )
+        # Add all messages in the thread
+        logging.info("Adding all messages in the thread")
+        for message in messages:
+            _ = trace(aoai_client.beta.threads.messages.create)(
+                thread_id=thread.id,
+                role=message["role"],
+                content=message["content"],
+            )
 
     # Create a run in the thread
     logging.info("Creating the run")
@@ -291,39 +299,3 @@ def chat_completion(
         max_waiting_time=max_waiting_time,
     )
     return runner.run_loop(run)
-
-
-def main():
-    """Test the chat completion function."""
-    from dotenv import load_dotenv
-
-    load_dotenv(override=True)
-
-    from promptflow.tracing import start_trace
-
-    start_trace()
-
-    # turn on logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-
-    # try a functions combo (without RAG)
-    response = chat_completion(
-        messages=[
-            {
-                "role": "user",
-                "content": "avg sales in jan",
-            }
-        ],
-    )
-
-    # test expected format
-    from openai.types.chat import ChatCompletion
-
-    print(ChatCompletion.model_validate(response))
-
-
-if __name__ == "__main__":
-    main()

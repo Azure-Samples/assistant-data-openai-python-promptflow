@@ -15,6 +15,7 @@ on an example sales dataset.
 
 ![Architecture Diagram](images/architecture-diagram-assistant-promptflow.png)
 
+
 ## Getting Started
 
 ### Prerequisites
@@ -61,16 +62,13 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
     pip install -r requirements.txt
     ```
 
-### Quickstart
+## Quickstart
 
 ## Step 1 : Provision the resources
-
-Run the following command under root folder of repo. Please install azd if it's not be installed.
 
 ```bash
 azd provision
 ```
-
 Once you complete the process, you can find `.env` file under .azure\{env} folder. Your `.env` file should look like this:
 
 ```
@@ -122,4 +120,3 @@ To be secure by design, we require templates in any Microsoft template collectio
 ## Resources
 - [Develop Python apps that use Azure AI services](https://learn.microsoft.com/azure/developer/python/azure-ai-for-python-developers)
 - Discover more sample apps in the [azd template gallery](https://aka.ms/ai-apps)!
-
