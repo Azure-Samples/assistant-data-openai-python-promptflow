@@ -39,9 +39,9 @@ def fetch_quota(client, locations, models):
                 if model.model.name == _model["name"] and (
                     model.model.version == _model["version"] or _model["version"] == "*"
                 ):
-                    # print(model.serialize())
                     for sku in model.model.skus:
                         if sku.name == _model["sku"] or _model["sku"] == "*":
+                            # print(model.serialize())
                             fetched_quotas_table.append(
                                 {
                                     "model": model.model.name,
