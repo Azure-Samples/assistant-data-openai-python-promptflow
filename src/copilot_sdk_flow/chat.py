@@ -93,8 +93,12 @@ class AssistantThreadRunner(object):
                 return self.completed()
             elif self.run.status == "requires_action":
                 self.requires_action()
-            elif self.run.status in ["cancelled", "expired", "failed"]:
-                raise ValueError(f"Run failed with status: {self.run.status}")
+            elif self.run.status == "cancelled":
+                raise Exception(f"Run was cancelled: {self.run.status}")
+            elif self.run.status == "expired":
+                raise Exception(f"Run expired: {self.run.status}")
+            elif self.run.status == "failed":
+                raise ValueError(f"Run failed with status: {self.run.status}, last_error: {self.run.last_error}")
             elif self.run.status in ["in_progress", "queued"]:
                 time.sleep(0.25)
             else:
