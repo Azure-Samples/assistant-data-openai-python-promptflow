@@ -6,8 +6,8 @@ import argparse
 
 # list of candidate models we need
 CANDIDATE_MODELS = [
-    {"name": "gpt-35-turbo", "version": "1106"},
-    {"name": "gpt-4", "version": "1106-Preview"},
+    {"name": "gpt-35-turbo", "version": "1106", "sku": "Standard"},
+    {"name": "gpt-4", "version": "1106-Preview", "sku": "Standard"},
 ]
 
 # list of regions in which to look for candidate models
@@ -39,8 +39,9 @@ def fetch_quota(client, locations, models):
                 if model.model.name == _model["name"] and (
                     model.model.version == _model["version"] or _model["version"] == "*"
                 ):
+                    # print(model.serialize())
                     for sku in model.model.skus:
-                        if sku.name == "ProvisionedManaged":
+                        if sku.name == _model["sku"] or _model["sku"] == "*":
                             fetched_quotas_table.append(
                                 {
                                     "model": model.model.name,
@@ -77,9 +78,11 @@ def fetch_deployments(client):
                     "deployment": deployment.name,
                     "model": deployment.properties.model.name,
                     "version": deployment.properties.model.version,
+                    "sku": deployment.sku.name,
                     "used_capacity": deployment.sku.capacity,
                 }
             )
+            # print(deployments_table[-1])
     return deployments_table
 
 
@@ -118,14 +121,15 @@ def main():
             if (
                 quota["model"] == deployment["model"]
                 and quota["location"] == deployment["location"]
+                and quota["sku"] == deployment["sku"]
             ):
                 quota["remaining_capacity"] -= deployment["used_capacity"]
 
     # show table in a readable markdown format
-    print("Model \t\t Version \t Location \t Max Capacity \t Remaining Capacity")
+    print("Model \t\t Version \t Location \t\t SKU \t Max Capacity \t Remaining Capacity")
     for quota in fetched_quotas_table:
         print(
-            f"{quota['model']} \t\t {quota['version']} \t\t {quota['location']} \t {quota['max_capacity']} \t\t {quota['remaining_capacity']}"
+            f"{quota['model']} \t\t {quota['version']} \t\t {quota['location']} \t {quota['sku']} \t {quota['max_capacity']} \t\t {quota['remaining_capacity']}"
         )
 
 
