@@ -165,15 +165,19 @@ def main(cli_args: List[str] = None):
         # those first variables are drawing from the hub connections
         "AZURE_OPENAI_ENDPOINT": os.getenv("AZURE_OPENAI_ENDPOINT")
         or "${{" + connection_string + "/target}}",
-        "AZURE_OPENAI_API_KEY": os.getenv("AZURE_OPENAI_API_KEY")
-        or "${{" + connection_string + "/credentials/key}}",
-        # the remaining ones can be set based on local environment variables
         "AZURE_OPENAI_ASSISTANT_ID": os.getenv("AZURE_OPENAI_ASSISTANT_ID"),
         "AZURE_OPENAI_API_VERSION": os.getenv(
             "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
         ),
         "AZURE_OPENAI_CHAT_DEPLOYMENT": os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
     }
+    if "AZURE_OPENAI_API_KEY" in os.environ:
+        logging.warn(
+            "Using key-based authentification, instead we recommend using Azure AD authentification instead."
+        )
+        environment_variables["AZURE_OPENAI_API_KEY"] = os.getenv(
+            "AZURE_OPENAI_API_KEY"
+        )
 
     # NOTE: this is a required fix
     environment_variables["PRT_CONFIG_OVERRIDE"] = (
