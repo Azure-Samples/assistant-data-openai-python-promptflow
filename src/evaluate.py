@@ -218,7 +218,7 @@ def main():
     print("-----Tabular Result-----")
     print(
         tabulate(
-            tabular_result, headers="keys", tablefmt="pretty", maxcolwidths=[None, 10]
+            tabular_result, headers="keys", tablefmt="pretty", maxcolwidths=50
         )
     )
     print(f"View evaluation results in AI Studio: {result['studio_url']}")
