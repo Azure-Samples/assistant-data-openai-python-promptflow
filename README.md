@@ -65,14 +65,18 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 ## Quickstart
 
 ## Step 1 : Provision the resources
-Sign-in to Azure
+### Authenticate with Azure
+Start the authentication flow from a terminal:
 ```bash
 azd auth login
 ```
+This should activate a Device Code authentication flow as shown below. Just follow the instructions and complete the auth flow until you get the ```Logged in on Azure``` message indicating success.
+
 Provision Azure resources
 ```bash
 azd provision
 ```
+*When selecting your Azure location (region) we suggest Sweden Central* 
 Once you complete the process, you can find `.env` file under .azure\{env} folder. Your `.env` file should look like this:
 
 ```
