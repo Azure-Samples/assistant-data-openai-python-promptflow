@@ -42,19 +42,18 @@ def get_model_config(evaluation_endpoint, evaluation_model):
             "Using key-based authentification, instead we recommend using Azure AD authentification instead."
         )
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
+
+        model_config = AzureOpenAIModelConfiguration(
+            azure_endpoint=evaluation_endpoint,
+            api_key=api_key,
+            azure_deployment=evaluation_model,
+        )
     else:
         logging.info("Using Azure AD authentification [recommended]")
-        credential = DefaultAzureCredential()
-        token_provider = get_bearer_token_provider(
-            credential, "https://cognitiveservices.azure.com/.default"
+        model_config = AzureOpenAIModelConfiguration(
+            azure_endpoint=evaluation_endpoint,
+            azure_deployment=evaluation_model,
         )
-        api_key = token_provider()
-
-    model_config = AzureOpenAIModelConfiguration(
-        azure_endpoint=evaluation_endpoint,
-        api_key=api_key,
-        azure_deployment=evaluation_model,
-    )
 
     return model_config
 
@@ -169,7 +168,7 @@ def main():
         "--evaluation-model",
         help="Azure OpenAI model deployment name used for evaluation",
         type=str,
-        default=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
+        default=os.getenv("AZURE_OPENAI_EVALUATION_DEPLOYMENT"),
     )
     parser.add_argument(
         "--metrics",

@@ -7,6 +7,8 @@ from tabulate import tabulate
 # list of candidate models we need
 CANDIDATE_MODELS = [
     {"name": "gpt-35-turbo", "version": "1106", "sku": "Standard", "kind": "OpenAI"},
+    {"name": "gpt-35-turbo", "version": "0301", "sku": "Standard", "kind": "OpenAI"},
+    {"name": "gpt-35-turbo", "version": "0613", "sku": "Standard", "kind": "OpenAI"},
     # {"name": "gpt-4", "version": "1106-Preview", "sku": "Standard", "kind": "OpenAI"},
 ]
 

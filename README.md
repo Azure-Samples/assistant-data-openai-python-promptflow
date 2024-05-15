@@ -82,14 +82,24 @@ It will show a table of the regions where you have `gpt-35-turbo` available.
 +--------------+---------+--------+---------------+----------+-------+-----------------+
 |    model     | version |  kind  |   location    |   sku    | quota | remaining_quota |
 +--------------+---------+--------+---------------+----------+-------+-----------------+
+| gpt-35-turbo |  0613   | OpenAI | australiaeast | Standard |  300  |       270       |
 | gpt-35-turbo |  1106   | OpenAI | australiaeast | Standard |  300  |       270       |
+| gpt-35-turbo |  0301   | OpenAI |    eastus     | Standard |  240  |        0        |
+| gpt-35-turbo |  0613   | OpenAI |    eastus     | Standard |  240  |        0        |
+| gpt-35-turbo |  0613   | OpenAI |    eastus2    | Standard |  300  |       300       |
+| gpt-35-turbo |  0301   | OpenAI | francecentral | Standard |  240  |        0        |
+| gpt-35-turbo |  0613   | OpenAI | francecentral | Standard |  240  |        0        |
 | gpt-35-turbo |  1106   | OpenAI | francecentral | Standard |  240  |        0        |
+| gpt-35-turbo |  0613   | OpenAI | swedencentral | Standard |  300  |       150       |
 | gpt-35-turbo |  1106   | OpenAI | swedencentral | Standard |  300  |       150       |
-| gpt-35-turbo |  1106   | OpenAI |    uksouth    | Standard |  240  |       180       |
+| gpt-35-turbo |  0301   | OpenAI |    uksouth    | Standard |  240  |       60        |
+| gpt-35-turbo |  0613   | OpenAI |    uksouth    | Standard |  240  |       60        |
+| gpt-35-turbo |  1106   | OpenAI |    uksouth    | Standard |  240  |       60        |
 +--------------+---------+--------+---------------+----------+-------+-----------------+
 ```
 
-Pick any region with remaining_quota above 30.
+Pick any region where you have both `1106` and `0301`, or both `1106` and `0613`, with remaining_quota above 60.
+
 
 ## Step 1 : Provision the resources
 
