@@ -149,6 +149,26 @@ Use azd to create the assistant in your Azure OpenAI instance, package the orche
 azd deploy
 ```
 
+#### Step 3. Run the assistant flow locally
+
+To run the flow locally, use `pf` cli:
+
+```bash
+pf flow test --flow ./copilot_sdk_flow/flow.flex.yaml --inputs chat_input="which month has peak sales in 2023"
+```
+
+You can add `--ui` to run the local test bed.
+
+### Step 4. Run an evaluation locally
+
+The evaluation script consists in running the completion function on a groundtruth dataset and evaluate the results.
+
+```bash
+python evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./data/ground_truth_sample.jsonl --metrics similarity
+```
+
+This will print out the results of the evaluation, as well as a link to the Azure AI Studio to browse the results online.
+
 ## Costs
 You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
 
