@@ -65,7 +65,11 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 ## Quickstart
 
 ## Step 1 : Provision the resources
-
+Sign-in to Azure
+```bash
+azd auth login
+```
+Provision Azure resources
 ```bash
 azd provision
 ```
