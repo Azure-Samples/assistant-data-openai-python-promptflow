@@ -19,8 +19,10 @@ param aiProjectName string = ''
 param appInsightsName string = ''
 @description('The Open AI resource name. If ommited will be generated')
 param openAiName string = ''
-@description('The name of the OpenAI deployment')
-param openAiDeploymentName string = 'gpt-35-turbo'
+@description('The name of the OpenAI deployment for the assistant')
+param openAiChatDeploymentName string = 'gpt-35-turbo-1106'
+@description('The name of the OpenAI deployment for the evaluation')
+param openAiEvaluationDeploymentName string = 'gpt-35-turbo-0301'
 @description('The Azure Container Registry resource name. If ommited will be generated')
 param containerRegistryName string = ''
 @description('The Azure Key Vault resource name. If ommited will be generated')
@@ -65,11 +67,23 @@ module ai 'core/host/ai-environment.bicep' = {
     openAiName: !empty(openAiName) ? openAiName : 'aoai-${resourceToken}'
     openAiModelDeployments:  [
       {
-        name: openAiDeploymentName
+        name: openAiChatDeploymentName
         model: {
           format: 'OpenAI'
           name: 'gpt-35-turbo'
           version: '1106' // use this version for Assistant API to work
+        }
+        sku: {
+          name: 'Standard'
+          capacity: 30
+        }
+      }
+      {
+        name: openAiEvaluationDeploymentName
+        model: {
+          format: 'OpenAI'
+          name: 'gpt-35-turbo'
+          version: '0301' // use this version for the evaluation API
         }
         sku: {
           name: 'Standard'
@@ -194,7 +208,8 @@ output AZUREAI_ENDPOINT_NAME string = machineLearningEndpoint.outputs.name
 
 output AZURE_OPENAI_NAME string = ai.outputs.openAiName
 output AZURE_OPENAI_ENDPOINT string = ai.outputs.openAiEndpoint
-output AZURE_OPENAI_CHAT_DEPLOYMENT string = openAiDeploymentName
+output AZURE_OPENAI_CHAT_DEPLOYMENT string = openAiChatDeploymentName
+output AZURE_OPENAI_EVALUATION_DEPLOYMENT string = openAiEvaluationDeploymentName
 
 output AZURE_CONTAINER_REGISTRY_NAME string = ai.outputs.containerRegistryName
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = ai.outputs.containerRegistryEndpoint
