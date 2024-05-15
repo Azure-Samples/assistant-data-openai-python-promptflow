@@ -10,10 +10,10 @@ param aiProjectName = readEnvironmentVariable('AZUREAI_PROJECT_NAME', '')
 param endpointName = readEnvironmentVariable('AZUREAI_ENDPOINT_NAME', '')
 
 param openAiName = readEnvironmentVariable('AZURE_OPENAI_NAME', '')
-param openAiChatDeploymentName = readEnvironmentVariable('AZURE_OPENAI_CHAT_DEPLOYMENT', 'gpt-35-turbo-1106')
+param openAiChatDeploymentName = readEnvironmentVariable('AZURE_OPENAI_CHAT_DEPLOYMENT', 'chat-35-turbo')
 param openAiChatDeploymentVersion = readEnvironmentVariable('AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION', '1106')
-param openAiEvaluationDeploymentName = readEnvironmentVariable('AZURE_OPENAI_EVALUATION_DEPLOYMENT', 'gpt-35-turbo-0301')
-param openAiEvaluationDeploymentVersion = readEnvironmentVariable('AZURE_OPENAI_EVALUATION_DEPLOYMENT_VERSION', '0301')
+param openAiEvaluationDeploymentName = readEnvironmentVariable('AZURE_OPENAI_EVALUATION_DEPLOYMENT', 'evaluation-35-turbo')
+param openAiEvaluationDeploymentVersion = readEnvironmentVariable('AZURE_OPENAI_EVALUATION_DEPLOYMENT_VERSION', '1106')
 
 param appInsightsName = readEnvironmentVariable('AZURE_APP_INSIGHTS_NAME', '')
 param containerRegistryName = readEnvironmentVariable('AZURE_CONTAINER_REGISTRY_NAME', '')
