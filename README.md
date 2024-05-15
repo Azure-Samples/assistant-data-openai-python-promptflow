@@ -29,7 +29,7 @@ on an example sales dataset.
   Currently, access to this service is granted only by application. You can apply for access to Azure OpenAI by completing the form at [aka.ms/oai/access](https://aka.ms/oai/access).
 - Python 3.10 or later version
 
-Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a region during deployment accordingly.
+Note: This azd template uses `gpt-35-turbo` (1106) or `gpt-4` (1106) for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a region during deployment accordingly.
 
 ### Installation
 
@@ -63,6 +63,33 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
     ```
 
 ## Quickstart
+
+## Before your start: check your quota
+
+To ensure you have quota to provision `gpt-35-turbo` version `1106`, you can either go to [oai.azure.com](https://oai.azure.com/) and check the Quota page in a given region.
+
+You can also try running our experimental script to check quota in your subscription:
+
+```bash
+python ./src/check_quota.py --subscription-id [SUBSCRIPTION_ID]
+```
+
+> Note: this script is a tentative to help locating quota, but it might provide numbers that are not accurate. The [Azure OpenAI portal](https://oai.azure.com/) and our [docs of quota limits](https://learn.microsoft.com/en-us/azure/ai-services/openai/quotas-limits) would be the source of truth.
+
+It will show a table of the regions where you have `gpt-35-turbo` available.
+
+```
++--------------+---------+--------+---------------+----------+-------+-----------------+
+|    model     | version |  kind  |   location    |   sku    | quota | remaining_quota |
++--------------+---------+--------+---------------+----------+-------+-----------------+
+| gpt-35-turbo |  1106   | OpenAI | australiaeast | Standard |  300  |       270       |
+| gpt-35-turbo |  1106   | OpenAI | francecentral | Standard |  240  |        0        |
+| gpt-35-turbo |  1106   | OpenAI | swedencentral | Standard |  300  |       150       |
+| gpt-35-turbo |  1106   | OpenAI |    uksouth    | Standard |  240  |       180       |
++--------------+---------+--------+---------------+----------+-------+-----------------+
+```
+
+Pick any region with remaining_quota above 30.
 
 ## Step 1 : Provision the resources
 
