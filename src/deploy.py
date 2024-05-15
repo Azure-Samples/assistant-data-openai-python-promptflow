@@ -124,17 +124,15 @@ def main(cli_args: List[str] = None):
             },
         )
 
-    model = (
-        Model(
-            name="copilot_flow_model",
-            path=args.flow_path,  # path to promptflow folder
-            properties=[  # this enables the chat interface in the endpoint test tab
-                ["azureml.promptflow.source_flow_id", "basic-chat"],
-                ["azureml.promptflow.mode", "chat"],
-                ["azureml.promptflow.chat_input", "chat_input"],
-                ["azureml.promptflow.chat_output", "reply"],
-            ],
-        ),
+    model = Model(
+        name="copilot_flow_model",
+        path=args.flow_path,  # path to promptflow folder
+        properties=[  # this enables the chat interface in the endpoint test tab
+            ["azureml.promptflow.source_flow_id", "basic-chat"],
+            ["azureml.promptflow.mode", "chat"],
+            ["azureml.promptflow.chat_input", "chat_input"],
+            ["azureml.promptflow.chat_output", "reply"],
+        ],
     )
     logging.info("Packaged flow as a model for deployment")
 
@@ -167,15 +165,22 @@ def main(cli_args: List[str] = None):
         # those first variables are drawing from the hub connections
         "AZURE_OPENAI_ENDPOINT": os.getenv("AZURE_OPENAI_ENDPOINT")
         or "${{" + connection_string + "/target}}",
-        "AZURE_OPENAI_API_KEY": os.getenv("AZURE_OPENAI_API_KEY")
-        or "${{" + connection_string + "/credentials/key}}",
-        # the remaining ones can be set based on local environment variables
         "AZURE_OPENAI_ASSISTANT_ID": os.getenv("AZURE_OPENAI_ASSISTANT_ID"),
         "AZURE_OPENAI_API_VERSION": os.getenv(
             "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
         ),
         "AZURE_OPENAI_CHAT_DEPLOYMENT": os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
     }
+    if "AZURE_OPENAI_API_KEY" in os.environ:
+        logging.warn(
+            "Using key-based authentification, instead we recommend using Azure AD authentification instead."
+        )
+        logging.info(
+            f"The key will not be injected from your environment, but from the Project connection '{args.aoai_connection_name}'."
+        )
+        environment_variables["AZURE_OPENAI_API_KEY"] = os.getenv(
+            "${{" + connection_string + "/credentials/key}}"
+        )
 
     # NOTE: this is a required fix
     environment_variables["PRT_CONFIG_OVERRIDE"] = (
@@ -194,11 +199,13 @@ def main(cli_args: List[str] = None):
     )
 
     # 1. create endpoint
+    print(f"Creating/updating endpoint {args.endpoint_name}...")
     created_endpoint = client.begin_create_or_update(
         endpoint
     ).result()  # result() means we wait on this to complete - currently endpoint doesnt have any status, but then deployment does have status
 
     # 2. create deployment
+    print(f"Creating/updating deployment {args.deployment_name}...")
     created_deployment = client.begin_create_or_update(deployment).result()
 
     # 3. update endpoint traffic for the deployment

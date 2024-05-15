@@ -16,7 +16,7 @@ azure-identity==1.16.0
 azure-mgmt-resource==23.0.1
 azure-mgmt-search==9.1.0
 azure-mgmt-cognitiveservices==13.5.0
-azure-ai-ml==1.16.0b1
+azure-ai-ml==1.16.0
 
 # utilities
 omegaconf-argparse==1.0.1
