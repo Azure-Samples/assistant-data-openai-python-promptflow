@@ -120,44 +120,34 @@ $Env:AZURE_OPENAI_EVALUATION_DEPLOYMENT_VERSION="0301"
 
 ## Step 1 : Provision the resources
 
+Use azd to provision all the resources of this template for you:
+
 ```bash
 azd provision
 ```
 Once you complete the process, you can find `.env` file under .azure\{env} folder. Your `.env` file should look like this:
 
 ```
+AZURE_ENV_NAME=...
+AZURE_TENANT_ID=...
 AZURE_SUBSCRIPTION_ID=...
 AZURE_RESOURCE_GROUP=...
-AZURE_AI_HUB_NAME=...
-AZURE_AI_PROJET_NAME=...
+AZURE_LOCATION=...
+AZUREAI_HUB_NAME=...
+AZUREAI_PROJECT_NAME=...
+AZUREAI_ENDPOINT_NAME=...
 AZURE_OPENAI_ENDPOINT=...
-AZURE_OPENAI_CHAT_DEPLOYMENT=...
+AZURE_OPENAI_CHAT_DEPLOYMENT="chat-35-turbo"
+AZURE_OPENAI_EVALUATION_DEPLOYMENT="evaluation-35-turbo"
 ```
 
-### Step 2. Create an assistant
+### Step 2. Deploy
 
-For the code to run, you need to create an assistant. This means setting up an assistant in your Azure OpenAI resource.
-You will get an assistant id you can inject in the code through an env var to run the assistant.
+Use azd to create the assistant in your Azure OpenAI instance, package the orchestration code and deploy it in an endpoint.
 
 ```bash
-python ./src/create_assistant.py --export-env ./.azure/"$AZURE_ENV_NAME"/.env
+azd deploy
 ```
-
-It will write the assistant id into your `.env` file:
-
-```
-******************************************************************
-Successfully created assistant with id: [IDENTIFIER].
-It has been written as an environment variable in .\.azure\[ENVIRONMENT]\.env.
-
-AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
-
-******************************************************************
-```
-
-### Step 3. Deploy
-
-work in progress
 
 ## Costs
 You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
