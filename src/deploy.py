@@ -175,8 +175,11 @@ def main(cli_args: List[str] = None):
         logging.warn(
             "Using key-based authentification, instead we recommend using Azure AD authentification instead."
         )
+        logging.info(
+            f"The key will not be injected from your environment, but from the Project connection '{args.aoai_connection_name}'."
+        )
         environment_variables["AZURE_OPENAI_API_KEY"] = os.getenv(
-            "AZURE_OPENAI_API_KEY"
+            "${{" + connection_string + "/credentials/key}}"
         )
 
     # NOTE: this is a required fix
