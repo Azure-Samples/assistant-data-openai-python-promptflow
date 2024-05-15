@@ -21,9 +21,13 @@ param appInsightsName string = ''
 @description('The Open AI resource name. If ommited will be generated')
 param openAiName string = ''
 @description('The name of the OpenAI deployment for the assistant')
-param openAiChatDeploymentName string = 'gpt-35-turbo-1106'
+param openAiChatDeploymentName string = ''
+@description('The version of the OpenAI deployment for the assistant')
+param openAiChatDeploymentVersion string = ''
 @description('The name of the OpenAI deployment for the evaluation')
-param openAiEvaluationDeploymentName string = 'gpt-35-turbo-0301'
+param openAiEvaluationDeploymentName string = ''
+@description('The version of the OpenAI deployment for the evaluation')
+param openAiEvaluationDeploymentVersion string = ''
 @description('The Azure Container Registry resource name. If ommited will be generated')
 param containerRegistryName string = ''
 @description('The Azure Key Vault resource name. If ommited will be generated')
@@ -72,7 +76,7 @@ module ai 'core/host/ai-environment.bicep' = {
         model: {
           format: 'OpenAI'
           name: 'gpt-35-turbo'
-          version: '1106' // use this version for Assistant API to work
+          version: openAiChatDeploymentVersion // use this version for Assistant API to work
         }
         sku: {
           name: 'Standard'
@@ -84,7 +88,7 @@ module ai 'core/host/ai-environment.bicep' = {
         model: {
           format: 'OpenAI'
           name: 'gpt-35-turbo'
-          version: '0301' // use this version for the evaluation API
+          version: openAiEvaluationDeploymentVersion // use this version for the evaluation API
         }
         sku: {
           name: 'Standard'
