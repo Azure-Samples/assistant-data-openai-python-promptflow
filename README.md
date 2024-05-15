@@ -124,7 +124,6 @@ AZUREAI_ENDPOINT_NAME=...
 AZURE_OPENAI_ENDPOINT=...
 AZURE_OPENAI_CHAT_DEPLOYMENT="chat-35-turbo"
 AZURE_OPENAI_EVALUATION_DEPLOYMENT="evaluation-35-turbo"
-...
 ```
 
 ### Step 2. Deploy
@@ -134,7 +133,6 @@ Use azd to create the assistant in your Azure OpenAI instance, package the orche
 ```bash
 azd deploy
 ```
-
 
 ## Costs
 You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
