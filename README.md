@@ -149,7 +149,7 @@ Use azd to create the assistant in your Azure OpenAI instance, package the orche
 azd deploy
 ```
 
-#### Step 3. Run the assistant flow locally
+### Step 3. Run the assistant flow locally
 
 To run the flow locally, use `pf` cli:
 
