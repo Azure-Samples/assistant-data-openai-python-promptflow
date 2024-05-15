@@ -2,17 +2,17 @@ name: assistant-data-openai-python-promptflow
 metadata:
   template: assistant-data-openai-python-promptflow@0.0.1
 hooks:
-  postprevision:
+  postprovision:
     windows: # Run referenced script that uses environment variables (script shown below)
       shell: pwsh
       continueOnError: false
       interactive: true
-      run: infra/hooks/postprevision.ps1
+      run: infra/hooks/postprovision.ps1
     posix: # Run referenced script that uses environment variables (script shown below)
       shell: sh
       continueOnError: false
       interactive: true
-      run: infra/hooks/postprevision.sh
+      run: infra/hooks/postprovision.sh
   predeploy:
     windows: # Run referenced script that uses environment variables (script shown below)
       shell: pwsh
