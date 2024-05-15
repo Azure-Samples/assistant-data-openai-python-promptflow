@@ -169,6 +169,15 @@ python evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./data
 
 This will print out the results of the evaluation, as well as a link to the Azure AI Studio to browse the results online.
 
+## Clean up
+
+To clean up all the resources created by this sample:
+
+1. Run `azd down`
+2. When asked if you are sure you want to continue, enter `y`
+3. When asked if you want to permanently delete the resources, enter `y`
+
+The resource group and all the resources will be deleted.
 ## Costs
 You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
 
