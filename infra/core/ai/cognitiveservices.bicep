@@ -7,6 +7,10 @@ param customSubDomainName string = name
 param deployments array = []
 param kind string = 'OpenAI'
 
+@description('Enable/disable the use of key based authentification entirely on the resource (if Disabled, only Entra ID will be authorized).')
+@allowed([ 'Enabled', 'Disabled' ])
+param keyBasedAuthAccess string = 'Enabled'
+
 @allowed([ 'Enabled', 'Disabled' ])
 param publicNetworkAccess string = 'Enabled'
 param sku object = {
@@ -30,6 +34,7 @@ resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
     customSubDomainName: customSubDomainName
     publicNetworkAccess: publicNetworkAccess
     networkAcls: networkAcls
+    disableLocalAuth: keyBasedAuthAccess == 'Enabled' ? false : true
   }
   sku: sku
 }

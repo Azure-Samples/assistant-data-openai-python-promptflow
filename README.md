@@ -4,6 +4,8 @@ This repository implements a data analytics chatbot based on the Assistants API.
 The chatbot can answer questions in natural language, and interpret them as queries
 on an example sales dataset.
 
+This document focused on instructions for **azd**. To discover how to evaluate and deploy using the Azure AI SDK, please find instructions in [src/README](src/README.md) instead.
+
 ## Features
 
 * An implementation of the Assistants API using functions and code interpreter
@@ -59,7 +61,7 @@ Note: This azd template uses `gpt-35-turbo` (1106) or `gpt-4` (1106) for assista
 3. Now that your environment is activated, install the SDK packages
 
     ```bash
-    pip install -r requirements.txt
+    pip install -r ./src/requirements.txt
     ```
 
 ## Quickstart
