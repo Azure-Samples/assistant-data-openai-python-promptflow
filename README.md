@@ -105,6 +105,8 @@ Pick any region where you have both `1106` and `0301`, or both `1106` and `0613`
 
 ## Step 1 : Provision the resources
 
+Use azd to provision all the resources of this template for you:
+
 ```bash
 azd provision
 ```
@@ -119,30 +121,14 @@ AZURE_OPENAI_ENDPOINT=...
 AZURE_OPENAI_CHAT_DEPLOYMENT=...
 ```
 
-### Step 2. Create an assistant
+### Step 2. Deploy
 
-For the code to run, you need to create an assistant. This means setting up an assistant in your Azure OpenAI resource.
-You will get an assistant id you can inject in the code through an env var to run the assistant.
+Use azd to create the assistant in your Azure OpenAI instance, package the orchestration code and deploy it in an endpoint.
 
 ```bash
-python ./src/create_assistant.py --export-env ./.azure/"$AZURE_ENV_NAME"/.env
+azd deploy
 ```
 
-It will write the assistant id into your `.env` file:
-
-```
-******************************************************************
-Successfully created assistant with id: [IDENTIFIER].
-It has been written as an environment variable in .\.azure\[ENVIRONMENT]\.env.
-
-AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
-
-******************************************************************
-```
-
-### Step 3. Deploy
-
-work in progress
 
 ## Costs
 You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
