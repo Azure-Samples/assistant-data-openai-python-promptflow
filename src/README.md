@@ -35,19 +35,19 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 
  * On MacOS and Linux run:
    ```bash
-   python3 --version
-   python3 -m venv .venv
+   python --version
+   python -m venv .venv
    source .venv/bin/activate
    ```
 
 * On Windows run:
    ```ps
-   py -3 --version
-   py -3 -m venv .venv
+   python --version
+   python -m venv .venv
    .venv\scripts\activate
    ```
 
-3. Now that your environment is activated, install the SDK packages
+3. Now that your environment is activated, install the SDK packages (from the `src/` folder):
 
     ```bash
     pip install -r requirements.txt
