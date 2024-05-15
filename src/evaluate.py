@@ -4,7 +4,6 @@ import logging
 
 import os
 import pandas as pd
-from pprint import pprint
 
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluate import evaluate
@@ -18,8 +17,7 @@ from promptflow.evals.evaluators import (
     QAEvaluator,
     # ChatEvaluator,
 )
-
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from tabulate import tabulate
 
 # local imports
 import sys
@@ -215,11 +213,15 @@ def main():
         metrics=args.metrics,
     )
 
-    pprint("-----Summarized Metrics-----")
-    pprint(result["metrics"])
-    pprint("-----Tabular Result-----")
-    print(json.dumps(tabular_result.to_json(orient="records", lines=True), indent=4))
-    pprint(f"View evaluation results in AI Studio: {result['studio_url']}")
+    print("-----Summarized Metrics-----")
+    print(tabulate(tabular_result, headers="keys", tablefmt="pretty"))
+    print("-----Tabular Result-----")
+    print(
+        tabulate(
+            tabular_result, headers="keys", tablefmt="pretty", maxcolwidths=[None, 10]
+        )
+    )
+    print(f"View evaluation results in AI Studio: {result['studio_url']}")
 
 
 if __name__ == "__main__":
