@@ -179,6 +179,16 @@ module userCognitiveServicesOpenAIContributor 'core/security/role.bicep' = {
   }
 }
 
+module endpointCognitiveServicesOpenAIContributor 'core/security/role.bicep' = {
+  name: 'endpoint-cognitive-services-openAI-contributor'
+  scope: rg
+  params: {
+    principalId: machineLearningEndpoint.outputs.principalId
+    roleDefinitionId: 'a001fd3d-188f-4b5d-821b-7da978bf7442'
+    principalType: 'ServicePrincipal'
+  }
+}
+
 module mlServiceRoleDataScientist 'core/security/role.bicep' = {
   name: 'ml-service-role-data-scientist'
   scope: rg
