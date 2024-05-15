@@ -76,16 +76,12 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' =
     name: 'aoai-connection'
     properties: {
       category: 'AzureOpenAI'
-      authType: 'ApiKey'
+      authType: 'AAD'
       isSharedToAll: true
       target: openAi.properties.endpoints['OpenAI Language Model Instance API']
       metadata: {
-        ApiVersion: '2023-07-01-preview'
         ApiType: 'azure'
         ResourceId: openAi.id
-      }
-      credentials: {
-        key: openAi.listKeys().key1
       }
     }
   }
