@@ -46,15 +46,15 @@ Note: This azd template uses `gpt-35-turbo` (1106) or `gpt-4` (1106) for assista
 
  * On MacOS and Linux run:
    ```bash
-   python3 --version
-   python3 -m venv .venv
+   python --version
+   python -m venv .venv
    source .venv/bin/activate
    ```
 
 * On Windows run:
    ```ps
-   py -3 --version
-   py -3 -m venv .venv
+   python --version
+   python -m venv .venv
    .venv\scripts\activate
    ```
 
@@ -102,6 +102,21 @@ It will show a table of the regions where you have `gpt-35-turbo` available.
 
 Pick any region where you have both `1106` and `0301`, or both `1106` and `0613`, with remaining_quota above 60.
 
+By default, `azd provision` will use `1106` for the chat model, and `0301` for the evaluation model. To modify which version to use for the chat and evaluation models, use the env vars before running `azd provision`.
+
+In bash:
+
+```bash
+AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION="1106"
+AZURE_OPENAI_EVALUATION_DEPLOYMENT_VERSION="0301"
+```
+
+or in powershell:
+
+```powershell
+$Env:AZURE_OPENAI_CHAT_DEPLOYMENT_VERSION="1106"
+$Env:AZURE_OPENAI_EVALUATION_DEPLOYMENT_VERSION="0301"
+```
 
 ## Step 1 : Provision the resources
 
