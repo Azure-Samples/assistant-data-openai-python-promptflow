@@ -355,6 +355,10 @@ class AzureOpenAIResource(AzureScopedResource):
                 "sku": {"name": "S0"},
                 "kind": self.kind,
                 "location": self.region,
+                "properties": {
+                    # to hit api directly via endpoint
+                    "custom_sub_domain_name": self.aoai_resource_name
+                },
             },
         ).result()
         return account
