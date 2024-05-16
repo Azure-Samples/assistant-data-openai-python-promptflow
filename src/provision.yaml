@@ -23,9 +23,14 @@ aoai:
 
   # specify deployments existing/creating
   deployments:
-    - name: "gpt-35-turbo"
+    - name: "chat-35-turbo"
       model: "gpt-35-turbo"
       version: "1106" # this version is required for Assistant API to work
+      capacity: 30
+    - name: "evaluation-35-turbo"
+      model: "gpt-35-turbo"
+      version: "0301" # evaluation works more reliably on a non-preview model
+      capacity: 30
 
 environment:
   # below will be used for --export-env argument

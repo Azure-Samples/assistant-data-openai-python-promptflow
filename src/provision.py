@@ -270,6 +270,7 @@ class AzureOpenAIDeployment(BaseModel):
     name: str
     model: str
     version: Optional[str] = None
+    capacity: Optional[int] = 10
 
     def exists(self) -> bool:
         """Check if the deployment exists."""
@@ -309,7 +310,7 @@ class AzureOpenAIDeployment(BaseModel):
                         "version": self.version,
                     }
                 },
-                "sku": {"capacity": 10, "name": "Standard"},
+                "sku": {"capacity": self.capacity, "name": "Standard"},
             },
         ).result()
         return deployment
@@ -607,6 +608,9 @@ def build_provision_plan(config) -> ProvisioningPlan:
                     model=deployment.model,
                     version=(
                         deployment.version if hasattr(deployment, "version") else None
+                    ),
+                    capacity=(
+                        deployment.capacity if hasattr(deployment, "capacity") else 10
                     ),
                 )
             )
