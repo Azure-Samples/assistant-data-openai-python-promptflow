@@ -141,6 +141,13 @@ AZURE_OPENAI_CHAT_DEPLOYMENT="chat-35-turbo"
 AZURE_OPENAI_EVALUATION_DEPLOYMENT="evaluation-35-turbo"
 ```
 
+It will also programmatically create an assistant in your Azure OpenAI instance. So you should expect an environment variable:
+
+```
+AZURE_OPENAI_ASSISTANT_ID=...
+```
+
+
 ### Step 2. Deploy
 
 Use azd to create the assistant in your Azure OpenAI instance, package the orchestration code and deploy it in an endpoint.
