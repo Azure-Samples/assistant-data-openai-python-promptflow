@@ -10,26 +10,44 @@ ai:
 aoai:
   # use references to an existing AOAI resource to connect it to your hub
   # or else provision.py will create a resource with those references
-  subscription_id: "<your-subscription-id>"
-  resource_group_name: "<your_resource_group>"
-  aoai_resource_name: "<my-new-aoai>"
 
+  # uncomment only if sub/rg/region are different from AI Hub
+  # subscription_id: "<your-subscription-id>"
+  # resource_group_name: "<your_resource_group>"
   # IMPORTANT: for assistant, region needs to be in [australiaeast, eastus, eastus2, francecentral, norwayeast, swedencentral, uksouth]
-  region: "eastus"
+  # region: "eastus"
+  aoai_resource_name: "<my-new-aoai>"
+  kind: "OpenAI" # use OpenAI for AIServices
+
+  # specify which auth mode to connect from local code to AzureOpenAI resource
+  auth:
+    mode: "aad" # use aad [recommended] or key [default]
+    role: "a001fd3d-188f-4b5d-821b-7da978bf7442" # Cognitive Service OpenAI Contributor
 
   # specify the name of the existing/creating hub connection for this resource
   connection_name: "aoai-connection" # this needs to match with name used for env vars below
 
   # specify deployments existing/creating
   deployments:
-    - name: "gpt-35-turbo"
+    - name: "chat-35-turbo"
       model: "gpt-35-turbo"
       version: "1106" # this version is required for Assistant API to work
+      capacity: 30
+    - name: "evaluation-35-turbo"
+      model: "gpt-35-turbo"
+      version: "0301" # evaluation works more reliably on a non-preview model
+      # version: "0613"
+      capacity: 30
 
 environment:
   # below will be used for --export-env argument
   variables:
     # those env vars are drawn from the AI hub connections
-    AZURE_OPENAI_ENDPOINT: "azureml://connections/aoai-connection/target"
+    AZURE_OPENAI_ENDPOINT: "azureml://connections/${aoai.connection_name}/target"
+    # we're not using key auth, so this is commented out
+    # see aoai.auth.mode above
+    # AZURE_OPENAI_API_KEY: "azureml://connections/${aoai.connection_name}/credentials/key"
+
     # those are just constants
-    AZURE_OPENAI_CHAT_DEPLOYMENT: "gpt-35-turbo"
+    AZURE_OPENAI_CHAT_DEPLOYMENT: "${aoai.deployments[0].name}"
+    AZURE_OPENAI_EVALUATION_DEPLOYMENT: "${aoai.deployments[1].name}"

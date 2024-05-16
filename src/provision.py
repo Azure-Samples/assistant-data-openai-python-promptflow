@@ -8,10 +8,13 @@ import argparse
 from pydantic import BaseModel, field_validator
 from omegaconf import OmegaConf
 from collections import OrderedDict
+import requests
+import traceback
+import uuid
 
 # from azure.ai.ml.entities import Project, Hub
 from azure.ai.ml import MLClient
-from azure.identity import DefaultAzureCredential
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from azure.mgmt.search import SearchManagementClient
 from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
 from azure.mgmt.resource import ResourceManagementClient
@@ -79,6 +82,104 @@ class AzureScopedResource(BaseModel):
         return v
 
 
+class RBACRoleAssignment(BaseModel):
+    resource: AzureScopedResource
+    role_definition_id: str
+    object_id: str
+
+    def scope(self) -> str:
+        return (
+            self.resource.scope()
+            + f"/roleAssignments/{self.role_definition_id}/<object_id>/{self.object_id}"
+        )
+
+    @classmethod
+    def get_self_client_id(cls) -> str:
+        # run shell command
+        # az ad signed-in-user show --query id -o tsv
+        # to get the principal ID of the current user
+        shell_command = "az ad signed-in-user show --query id -o tsv"
+        # return os.popen(shell_command).read().strip()
+        # use subprocess instead of os.popen
+        try:
+            import subprocess
+
+            return (
+                subprocess.run(shell_command, shell=True, capture_output=True)
+                .stdout.decode()
+                .strip()
+            )
+        except:
+            raise Exception(
+                f"Failed to get the object ID of the current user, please make sure you have logged in with Azure CLI.: {traceback.format_exc()}"
+            )
+
+    def get_bearer_token(self) -> str:
+        credential = DefaultAzureCredential()
+        bearer_token_provider = get_bearer_token_provider(
+            credential, "https://management.azure.com/.default"
+        )
+        return bearer_token_provider()
+
+    def exists(self) -> bool:
+        try:
+            # GET https://management.azure.com/{scope}/providers/Microsoft.Authorization/roleAssignments/{roleAssignmentName}?api-version=2022-04-01
+            headers = {
+                "Authorization": f"Bearer {self.get_bearer_token()}",
+                # "Content-Type": "application/json",
+            }
+            response = requests.get(
+                url=f"https://management.azure.com/{self.resource.scope()}/providers/Microsoft.Authorization/roleAssignments?api-version=2022-04-01",
+                headers=headers,
+            )
+            if response.status_code != 200:
+                raise Exception(f"Failed to get role assignments: {response.text}")
+
+            # returns the list of all assignments for the results, that we have to parse
+            for role_assignment in response.json()["value"]:
+                logging.debug(f"checking role_assignment: {role_assignment}")
+                if (
+                    role_assignment["properties"]["roleDefinitionId"].endswith(
+                        self.role_definition_id
+                    )
+                    and role_assignment["properties"]["principalId"] == self.object_id
+                ):
+                    logging.debug(f"Role assignment exists: {role_assignment}")
+                    return True
+            return False
+        except:
+            logging.debug(
+                f"Failed to check if role assignment exists: {traceback.format_exc()}"
+            )
+            return False
+
+    def create(self):
+        logging.info(
+            f"Assigning role {self.role_definition_id} to object_id {self.object_id} on scope {self.resource.scope()}..."
+        )
+        headers = {
+            "Authorization": f"Bearer {self.get_bearer_token()}",
+            # "Content-Type": "application/json",
+        }
+        response = requests.put(
+            url=f"https://management.azure.com/{self.resource.scope()}/providers/Microsoft.Authorization/roleAssignments/{str(uuid.uuid4())}?api-version=2022-04-01",
+            headers=headers,
+            json={
+                "properties": {
+                    "roleDefinitionId": f"{self.resource.scope()}/providers/Microsoft.Authorization/roleDefinitions/{self.role_definition_id}",
+                    "principalId": self.object_id,
+                }
+            },
+        )
+        if response.status_code == 409 and "RoleAssignmentExists" in response.text:
+            logging.info("Role assignment already exists.")
+            return
+        if response.status_code != 200:
+            raise Exception(
+                f"Status_code={response.status_code}, failed to assign role: {response.text}"
+            )
+
+
 class ResourceGroup(AzureScopedResource):
     def exists(self) -> bool:
         """Check if the resource group exists."""
@@ -107,6 +208,9 @@ class ResourceGroup(AzureScopedResource):
 
 class AzureAIHub(AzureScopedResource):
     hub_name: str
+
+    def scope(self):
+        return f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{self.hub_name}"
 
     def exists(self) -> bool:
         """Check if the resource exists."""
@@ -145,6 +249,9 @@ class AzureAIHub(AzureScopedResource):
 class AzureAIProject(AzureScopedResource):
     hub_name: str
     project_name: str
+
+    def scope(self):
+        return f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{self.hub_name}/projects/{self.project_name}"
 
     def exists(self) -> bool:
         """Check if the resource exists."""
@@ -188,6 +295,9 @@ class AzureAIProject(AzureScopedResource):
 class AzureAISearch(AzureScopedResource):
     search_resource_name: str
 
+    def scope(self):
+        return f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group_name}/providers/Microsoft.Search/searchServices/{self.search_resource_name}"
+
     def exists(self) -> bool:
         """Check if the resource exists."""
         client = SearchManagementClient(
@@ -226,6 +336,7 @@ class AzureAISearch(AzureScopedResource):
 
 class AzureOpenAIResource(AzureScopedResource):
     aoai_resource_name: str
+    kind: Optional[str] = "OpenAI"
 
     def scope(self) -> str:
         return f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{self.aoai_resource_name}"
@@ -258,8 +369,12 @@ class AzureOpenAIResource(AzureScopedResource):
             account_name=self.aoai_resource_name,
             account={
                 "sku": {"name": "S0"},
-                "kind": "OpenAI",
+                "kind": self.kind,
                 "location": self.region,
+                "properties": {
+                    # to hit api directly via endpoint
+                    "custom_sub_domain_name": self.aoai_resource_name
+                },
             },
         ).result()
         return account
@@ -270,6 +385,10 @@ class AzureOpenAIDeployment(BaseModel):
     name: str
     model: str
     version: Optional[str] = None
+    capacity: Optional[int] = 10
+
+    def scope(self):
+        return self.resource.scope() + f"/deployments/{self.name}"
 
     def exists(self) -> bool:
         """Check if the deployment exists."""
@@ -309,7 +428,7 @@ class AzureOpenAIDeployment(BaseModel):
                         "version": self.version,
                     }
                 },
-                "sku": {"capacity": 10, "name": "Standard"},
+                "sku": {"capacity": self.capacity, "name": "Standard"},
             },
         ).result()
         return deployment
@@ -320,6 +439,9 @@ class ConnectionSpec(BaseModel):
     resource: Union[AzureAISearch, AzureOpenAIResource]
     name: str
     auth: str
+
+    def scope(self):
+        return self.hub.scope() + f"/connections/{self.name}"
 
     def exists(self) -> bool:
         """Check if the connection in AI Hub exists."""
@@ -388,7 +510,7 @@ class ConnectionSpec(BaseModel):
             resource_target = rsc_client.accounts.get(
                 resource_group_name=self.resource.resource_group_name,
                 account_name=self.resource.aoai_resource_name,
-            ).properties.endpoint
+            ).properties.endpoints["OpenAI Language Model Instance API"]
 
             # get keys
             rsc_keys = rsc_client.accounts.list_keys(
@@ -404,7 +526,9 @@ class ConnectionSpec(BaseModel):
             )
 
             # create connection
-            return ml_client.connections.create_or_update(connection=connection_config)
+            return ml_client.connections.create_or_update(
+                workspace_connection=connection_config
+            )
         else:
             raise ValueError(f"Unknown connection type: {self.resource.type}")
 
@@ -423,42 +547,26 @@ class ProvisioningPlan:
             # disregard duplicates
             logging.debug(f"discarding duplicate key {key}")
         else:
+            logging.debug(f"adding key {key} to provisioning plan")
             self.steps[key] = resource
 
     def add_resource(self, resource: Any):
-        if isinstance(resource, ResourceGroup):
-            key = f"{resource.subscription_id}/{resource.resource_group_name}"
-            self._add_step(key, resource)
-        elif isinstance(resource, AzureAIHub):
-            key = f"{resource.subscription_id}/{resource.resource_group_name}/{resource.hub_name}"
-            self._add_step(key, resource)
-        elif isinstance(resource, AzureAIProject):
-            key = f"{resource.subscription_id}/{resource.resource_group_name}/{resource.hub_name}/{resource.project_name}"
-            self._add_step(key, resource)
-        elif isinstance(resource, AzureAISearch):
-            key = f"{resource.subscription_id}/{resource.resource_group_name}/{resource.search_resource_name}"
-            self._add_step(key, resource)
-        elif isinstance(resource, AzureOpenAIResource):
-            key = f"{resource.subscription_id}/{resource.resource_group_name}/{resource.aoai_resource_name}"
-            self._add_step(key, resource)
-        elif isinstance(resource, AzureOpenAIDeployment):
-            key = f"{resource.resource.subscription_id}/{resource.resource.resource_group_name}/{resource.resource.aoai_resource_name}/{resource.name}"
-            self._add_step(key, resource)
-        elif isinstance(resource, ConnectionSpec):
-            key = f"{resource.hub.subscription_id}/{resource.hub.resource_group_name}/{resource.hub.hub_name}/{resource.name}"
-            self._add_step(key, resource)
-        else:
-            raise ValueError(f"Unknown resource type: {resource}")
+        key = resource.scope()
+        self._add_step(key, resource)
 
     def remove_existing(self):
         """Remove existing resources from the plan."""
         remove_keys = []
         for k in self.steps:
             if self.steps[k].exists():
-                logging.info(f"Resource {k} already exists, skipping.")
+                logging.info(
+                    f"Resource {self.steps[k].__class__.__name__}={k} already exists, skipping."
+                )
                 remove_keys.append(k)
             else:
-                logging.info(f"Resource {k} does not exist, will be added to plan.")
+                logging.info(
+                    f"Resource {self.steps[k].__class__.__name__}={k} does not exist, will be added to plan."
+                )
 
         for k in remove_keys:
             del self.steps[k]
@@ -526,18 +634,33 @@ def build_provision_plan(config) -> ProvisioningPlan:
 
     # Search resource
     if hasattr(config, "search") and config.search is not None:
+        search_subscription_id = (
+            config.search.subscription_id
+            if hasattr(config.search, "subscription_id")
+            else config.ai.subscription_id
+        )
+        search_resource_group_name = (
+            config.search.resource_group_name
+            if hasattr(config.search, "resource_group_name")
+            else config.ai.resource_group_name
+        )
+        search_region = (
+            config.search.region
+            if hasattr(config.search, "region")
+            else config.ai.region
+        )
         plan.add_resource(
             ResourceGroup(
-                subscription_id=config.search.subscription_id,
-                resource_group_name=config.search.resource_group_name,
-                region=config.search.region,
+                subscription_id=search_subscription_id,
+                resource_group_name=search_resource_group_name,
+                region=search_region,
             )
         )
         search = AzureAISearch(
-            subscription_id=config.search.subscription_id,
-            resource_group_name=config.search.resource_group_name,
+            subscription_id=search_subscription_id,
+            resource_group_name=search_resource_group_name,
             search_resource_name=config.search.search_resource_name,
-            region=config.search.region,
+            region=search_region,
         )
         plan.add_resource(search)
         plan.add_resource(
@@ -550,18 +673,32 @@ def build_provision_plan(config) -> ProvisioningPlan:
         )
 
     # AOAI resource
+    aoai_subscription_id = (
+        config.aoai.subscription_id
+        if hasattr(config.aoai, "subscription_id")
+        else config.ai.subscription_id
+    )
+    aoai_resource_group_name = (
+        config.aoai.resource_group_name
+        if hasattr(config.aoai, "resource_group_name")
+        else config.ai.resource_group_name
+    )
+    aoai_region = (
+        config.aoai.region if hasattr(config.aoai, "region") else config.ai.region
+    )
     plan.add_resource(
         ResourceGroup(
-            subscription_id=config.aoai.subscription_id,
-            resource_group_name=config.aoai.resource_group_name,
-            region=config.aoai.region,
+            subscription_id=aoai_subscription_id,
+            resource_group_name=aoai_resource_group_name,
+            region=aoai_region,
         )
     )
     aoai = AzureOpenAIResource(
-        subscription_id=config.aoai.subscription_id,
-        resource_group_name=config.aoai.resource_group_name,
+        subscription_id=aoai_subscription_id,
+        resource_group_name=aoai_resource_group_name,
         aoai_resource_name=config.aoai.aoai_resource_name,
-        region=config.aoai.region,
+        region=aoai_region,
+        kind=config.aoai.kind if hasattr(config.aoai, "kind") else "OpenAI",
     )
     plan.add_resource(aoai)
     plan.add_resource(
@@ -569,8 +706,16 @@ def build_provision_plan(config) -> ProvisioningPlan:
             hub=ai_hub, name=config.aoai.connection_name, auth="key", resource=aoai
         )
     )
+    if hasattr(config.aoai, "auth") and config.aoai.auth.mode == "aad":
+        plan.add_resource(
+            RBACRoleAssignment(
+                resource=aoai,
+                role_definition_id=config.aoai.auth.role,
+                object_id=RBACRoleAssignment.get_self_client_id(),
+            )
+        )
 
-    if config.aoai.deployments:
+    if hasattr(config.aoai, "deployments") and config.aoai.deployments:
         for deployment in config.aoai.deployments:
             plan.add_resource(
                 AzureOpenAIDeployment(
@@ -579,6 +724,9 @@ def build_provision_plan(config) -> ProvisioningPlan:
                     model=deployment.model,
                     version=(
                         deployment.version if hasattr(deployment, "version") else None
+                    ),
+                    capacity=(
+                        deployment.capacity if hasattr(deployment, "capacity") else 10
                     ),
                 )
             )
@@ -686,7 +834,9 @@ def main():
     else:
         print("Here's the resulting provisioning plan:")
         for step_key in provision_plan.steps:
-            print(str(provision_plan.steps[step_key]))
+            print(
+                f"- {provision_plan.steps[step_key].__class__.__name__} : {str(provision_plan.steps[step_key])}"
+            )
 
     if not args.show_only:
         # provision all resources remaining
