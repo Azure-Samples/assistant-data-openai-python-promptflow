@@ -26,7 +26,7 @@ This document focused on instructions for **azd**. To discover how to evaluate a
     - Windows: `winget install microsoft.azd`
     - Linux: `curl -fsSL https://aka.ms/install-azd.sh | bash`
     - MacOS: `brew tap azure/azd && brew install azd`
-- An Azure subscription - [Create one for free](https://azure.microsoft.com/free/cognitive-services)
+- An Azure subscription with [permission](https://learn.microsoft.com/en-us/azure/role-based-access-control/rbac-and-directory-admin-roles#azure-roles) to create and deploy resources - [Create one for free](https://azure.microsoft.com/free/cognitive-services)
 - Access granted to Azure OpenAI in the desired Azure subscription  
   Currently, access to this service is granted only by application. You can apply for access to Azure OpenAI by completing the form at [aka.ms/oai/access](https://aka.ms/oai/access).
 - Python 3.10 or later version
@@ -73,6 +73,7 @@ To ensure you have quota to provision `gpt-35-turbo` version `1106`, you can eit
 You can also try running our experimental script to check quota in your subscription:
 
 ```bash
+azd auth login        # if you haven't logged in yet
 python ./src/check_quota.py --subscription-id [SUBSCRIPTION_ID]
 ```
 
