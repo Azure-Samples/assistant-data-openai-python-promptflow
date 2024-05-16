@@ -270,6 +270,7 @@ class AzureOpenAIDeployment(BaseModel):
     name: str
     model: str
     version: Optional[str] = None
+    capacity: Optional[int] = 10
 
     def exists(self) -> bool:
         """Check if the deployment exists."""
@@ -309,7 +310,7 @@ class AzureOpenAIDeployment(BaseModel):
                         "version": self.version,
                     }
                 },
-                "sku": {"capacity": 10, "name": "Standard"},
+                "sku": {"capacity": self.capacity, "name": "Standard"},
             },
         ).result()
         return deployment
@@ -526,18 +527,33 @@ def build_provision_plan(config) -> ProvisioningPlan:
 
     # Search resource
     if hasattr(config, "search") and config.search is not None:
+        search_subscription_id = (
+            config.search.subscription_id
+            if hasattr(config.search, "subscription_id")
+            else config.ai.subscription_id
+        )
+        search_resource_group_name = (
+            config.search.resource_group_name
+            if hasattr(config.search, "resource_group_name")
+            else config.ai.resource_group_name
+        )
+        search_region = (
+            config.search.region
+            if hasattr(config.search, "region")
+            else config.ai.region
+        )
         plan.add_resource(
             ResourceGroup(
-                subscription_id=config.search.subscription_id,
-                resource_group_name=config.search.resource_group_name,
-                region=config.search.region,
+                subscription_id=search_subscription_id,
+                resource_group_name=search_resource_group_name,
+                region=search_region,
             )
         )
         search = AzureAISearch(
-            subscription_id=config.search.subscription_id,
-            resource_group_name=config.search.resource_group_name,
+            subscription_id=search_subscription_id,
+            resource_group_name=search_resource_group_name,
             search_resource_name=config.search.search_resource_name,
-            region=config.search.region,
+            region=search_region,
         )
         plan.add_resource(search)
         plan.add_resource(
@@ -550,18 +566,31 @@ def build_provision_plan(config) -> ProvisioningPlan:
         )
 
     # AOAI resource
+    aoai_subscription_id = (
+        config.aoai.subscription_id
+        if hasattr(config.aoai, "subscription_id")
+        else config.ai.subscription_id
+    )
+    aoai_resource_group_name = (
+        config.aoai.resource_group_name
+        if hasattr(config.aoai, "resource_group_name")
+        else config.ai.resource_group_name
+    )
+    aoai_region = (
+        config.aoai.region if hasattr(config.aoai, "region") else config.ai.region
+    )
     plan.add_resource(
         ResourceGroup(
-            subscription_id=config.aoai.subscription_id,
-            resource_group_name=config.aoai.resource_group_name,
-            region=config.aoai.region,
+            subscription_id=aoai_subscription_id,
+            resource_group_name=aoai_resource_group_name,
+            region=aoai_region,
         )
     )
     aoai = AzureOpenAIResource(
-        subscription_id=config.aoai.subscription_id,
-        resource_group_name=config.aoai.resource_group_name,
+        subscription_id=aoai_subscription_id,
+        resource_group_name=aoai_resource_group_name,
         aoai_resource_name=config.aoai.aoai_resource_name,
-        region=config.aoai.region,
+        region=aoai_region,
     )
     plan.add_resource(aoai)
     plan.add_resource(
@@ -579,6 +608,9 @@ def build_provision_plan(config) -> ProvisioningPlan:
                     model=deployment.model,
                     version=(
                         deployment.version if hasattr(deployment, "version") else None
+                    ),
+                    capacity=(
+                        deployment.capacity if hasattr(deployment, "capacity") else 10
                     ),
                 )
             )
