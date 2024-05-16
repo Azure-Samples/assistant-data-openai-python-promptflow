@@ -31,6 +31,6 @@ environment:
   # below will be used for --export-env argument
   variables:
     # those env vars are drawn from the AI hub connections
-    AZURE_OPENAI_ENDPOINT: "azureml://connections/${{aoai.connection_name}}/target"
+    AZURE_OPENAI_ENDPOINT: "azureml://connections/${aoai.connection_name}/target"
     # those are just constants
-    AZURE_OPENAI_CHAT_DEPLOYMENT: "${{aoai.deployments[0].name}}"
+    AZURE_OPENAI_CHAT_DEPLOYMENT: "${aoai.deployments[0].name}"
