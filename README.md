@@ -178,7 +178,7 @@ You can add `--ui` to run the local test bed.
 The evaluation script consists in running the completion function on a groundtruth dataset and evaluate the results.
 
 ```bash
-python evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./src/data/ground_truth_sample.jsonl --metrics similarity
+python ./src/evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./src/data/ground_truth_sample.jsonl --metrics similarity
 ```
 
 This will print out the results of the evaluation, as well as a link to the Azure AI Studio to browse the results online.
