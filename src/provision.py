@@ -10,6 +10,7 @@ from omegaconf import OmegaConf
 from collections import OrderedDict
 import requests
 import traceback
+import uuid
 
 # from azure.ai.ml.entities import Project, Hub
 from azure.ai.ml import MLClient
@@ -131,29 +132,37 @@ class RBACRoleAssignment(BaseModel):
                 url=f"https://management.azure.com/{self.resource.scope()}/providers/Microsoft.Authorization/roleAssignments?api-version=2022-04-01",
                 headers=headers,
             )
+            if response.status_code != 200:
+                raise Exception(f"Failed to get role assignments: {response.text}")
+
             # returns the list of all assignments for the results, that we have to parse
             for role_assignment in response.json()["value"]:
+                logging.debug(f"checking role_assignment: {role_assignment}")
                 if (
-                    role_assignment["properties"]["roleDefinitionId"]
-                    == f"{self.resource.scope()}/providers/Microsoft.Authorization/roleDefinitions/{self.role_definition_id}"
+                    role_assignment["properties"]["roleDefinitionId"].endswith(
+                        self.role_definition_id
+                    )
                     and role_assignment["properties"]["principalId"] == self.object_id
                 ):
+                    logging.debug(f"Role assignment exists: {role_assignment}")
                     return True
-            return response.status_code == 200
+            return False
         except:
-            print(traceback.format_exc())
+            logging.debug(
+                f"Failed to check if role assignment exists: {traceback.format_exc()}"
+            )
             return False
 
     def create(self):
         logging.info(
-            f"Assigning role {self.role_definition_id} to object_id {self.object_id}..."
+            f"Assigning role {self.role_definition_id} to object_id {self.object_id} on scope {self.resource.scope()}..."
         )
         headers = {
             "Authorization": f"Bearer {self.get_bearer_token()}",
             # "Content-Type": "application/json",
         }
         response = requests.put(
-            url=f"https://management.azure.com/{self.resource.scope()}/providers/Microsoft.Authorization/roleAssignments/{self.role_definition_id}?api-version=2022-04-01",
+            url=f"https://management.azure.com/{self.resource.scope()}/providers/Microsoft.Authorization/roleAssignments/{str(uuid.uuid4())}?api-version=2022-04-01",
             headers=headers,
             json={
                 "properties": {
@@ -162,6 +171,13 @@ class RBACRoleAssignment(BaseModel):
                 }
             },
         )
+        if response.status_code == 409 and "RoleAssignmentExists" in response.text:
+            logging.info("Role assignment already exists.")
+            return
+        if response.status_code != 200:
+            raise Exception(
+                f"Status_code={response.status_code}, failed to assign role: {response.text}"
+            )
 
 
 class ResourceGroup(AzureScopedResource):
@@ -543,10 +559,14 @@ class ProvisioningPlan:
         remove_keys = []
         for k in self.steps:
             if self.steps[k].exists():
-                logging.info(f"Resource {k} already exists, skipping.")
+                logging.info(
+                    f"Resource {self.steps[k].__class__.__name__}={k} already exists, skipping."
+                )
                 remove_keys.append(k)
             else:
-                logging.info(f"Resource {k} does not exist, will be added to plan.")
+                logging.info(
+                    f"Resource {self.steps[k].__class__.__name__}={k} does not exist, will be added to plan."
+                )
 
         for k in remove_keys:
             del self.steps[k]
