@@ -69,7 +69,7 @@ module ai 'core/host/ai-environment.bicep' = {
     storageAccountName: !empty(storageAccountName)
       ? storageAccountName
       : '${abbrs.storageStorageAccounts}${resourceToken}'
-    openAiName: !empty(openAiName) ? openAiName : 'aoai-${resourceToken}'
+    aiServicesName: !empty(openAiName) ? openAiName : 'aoai-${resourceToken}'
     openAiModelDeployments:  [
       {
         name: openAiChatDeploymentName
@@ -221,7 +221,7 @@ output AZUREAI_HUB_NAME string = ai.outputs.hubName
 output AZUREAI_PROJECT_NAME string = ai.outputs.projectName
 output AZUREAI_ENDPOINT_NAME string = machineLearningEndpoint.outputs.name
 
-output AZURE_OPENAI_NAME string = ai.outputs.openAiName
+output AZURE_OPENAI_NAME string = ai.outputs.aiServicesName
 output AZURE_OPENAI_ENDPOINT string = ai.outputs.openAiEndpoint
 output AZURE_OPENAI_CHAT_DEPLOYMENT string = openAiChatDeploymentName
 output AZURE_OPENAI_EVALUATION_DEPLOYMENT string = openAiEvaluationDeploymentName
