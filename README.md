@@ -147,6 +147,13 @@ It will also programmatically create an assistant in your Azure OpenAI instance.
 AZURE_OPENAI_ASSISTANT_ID=...
 ```
 
+**Troubleshooting** - If you do not see a `.env` file at the root of the repo in the end of this process, it means the `postprovision` steps have failed. Before moving foward, do the following:
+
+```bash
+cp ./.azure/$AZURE_ENV_NAME/.env ./.env
+python -m pip install -r ./src/requirements.txt
+python ./src/create_assistant.py --export-env ./.env
+```
 
 ### Step 2. Deploy
 
