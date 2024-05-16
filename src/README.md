@@ -101,7 +101,7 @@ with your available quota (see previous section).
 The script will:
 
 - Check whether the resources you specified exist, otherwise it will create them.
-- Assign the right RBAC assignent (Cognitive Service OpenAI Contributor) towards the Azure OpenAI resource to leverage AAD.
+- Assign the right RBAC assignent (Cognitive Service OpenAI Contributor) towards the Azure OpenAI resource to leverage AAD (see troubleshooting guide below).
 - It will then populate a `.env` file for you that references the provisioned or attached resources, including your keys (if specified).
 
 ```bash
@@ -172,3 +172,31 @@ To deploy the flow in your Azure AI project under a managed endpoint, use:
 ```bash
 python deploy.py --endpoint-name [UNIQUE_NAME]
 ```
+
+## Troubleshooting
+
+### Principal does not have access to API/Operation
+
+When leveraging Azure OpenAI using Microsoft Entra ID (AAD) authentification, a typical issue when running inferences is getting the exception:
+
+```json
+{"error": {"code": "PermissionDenied", "message": "Principal does not have access to API/Operation."}}
+```
+
+To resolve this, you'll need to assign to yourself the role "Cognitive Services OpenAI User" or "Cognitive Services OpenAI Contributor to the Azure OpenAI Instance:
+
+1. Find your `OBJECT_ID`:
+
+    ```bash
+    az ad signed-in-user show --query id -o tsv
+    ```
+
+2. Then run the following command to grand permissions (at the level of the resource group):
+
+    ```bash
+    az role assignment create \
+            --role "Cognitive Services OpenAI Contributor" \
+            --assignee-object-id "$OBJECT_ID" \
+            --assignee-principal-type User \
+            --scope /subscriptions/"$AZURE_SUBSCRIPTION_ID"/resourceGroups/"$AZURE_RESOURCE_GROUP"/providers/Microsoft.CognitiveServices/accounts/"$AZURE_OPENAI_NAME" \
+    ```
