@@ -614,7 +614,7 @@ def build_provision_plan(config) -> ProvisioningPlan:
     return plan
 
 
-def build_environment(environment_config, ai_project, yaml_config, env_file_path):
+def build_environment(environment_config, ai_project, env_file_path):
     """Get endpoints and keys from the config into the environment (dotenv)."""
     # connect to AI Hub
     ml_client = MLClient(
@@ -722,7 +722,7 @@ def main():
 
     if args.export_env:
         logging.info(f"Building environment into {args.export_env}")
-        build_environment(yaml_spec.environment, ai_project, yaml_spec, args.export_env)
+        build_environment(yaml_spec.environment, ai_project, args.export_env)
 
 
 if __name__ == "__main__":
