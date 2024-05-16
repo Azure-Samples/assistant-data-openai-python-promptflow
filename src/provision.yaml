@@ -18,6 +18,11 @@ aoai:
   # region: "eastus"
   aoai_resource_name: "<my-new-aoai>"
 
+  # specify which auth mode to connect from local code to AzureOpenAI resource
+  auth:
+    mode: "aad" # use aad [recommended] or key [default]
+    role: "a001fd3d-188f-4b5d-821b-7da978bf7442" # Cognitive Service OpenAI Contributor
+
   # specify the name of the existing/creating hub connection for this resource
   connection_name: "aoai-connection" # this needs to match with name used for env vars below
 

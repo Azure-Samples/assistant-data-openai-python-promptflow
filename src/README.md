@@ -92,15 +92,27 @@ Pick any region where you have both `1106` and `0301`, or both `1106` and `0613`
 
 ### Step 1 : Provision the resources
 
-The provision.py script will help provision the resources you need to run this sample. You **must** specify your desired resources in the provision.yaml - there are notes in that file to help you. The script will check whether the resources you specified exist, otherwise it will create them. It will then construct a `.env` for you that references the provisioned or attached resources, including your keys. Once the provisioning is complete, you'll be ready to move to next step.
+The provision.py script will help provision the resources you need to run this sample.
 
-```
+**IMPORTANT**: You **must** specify your desired resources in the file `provision.yaml` - there are notes in that file to help you.
+This file also allows you to modify the region and version numbers of the models to match
+with your available quota (see previous section).
+
+The script will:
+
+- Check whether the resources you specified exist, otherwise it will create them.
+- Assign the right RBAC assignent (Cognitive Service OpenAI Contributor) towards the Azure OpenAI resource to leverage AAD.
+- It will then populate a `.env` file for you that references the provisioned or attached resources, including your keys (if specified).
+
+**IMPORTANT**: By default, provisioning relies on Microsoft Entra ID (AAD) authentification instead of keys. You'll need to assign to yourself the role "Cognitive Services OpenAI User" to the Azure OpenAI Instance. Alternatively, you can set env var `AZURE_OPENAI_API_KEY` with your api key. But we recommend Entra ID instead for a more secure setup.
+
+```bash
 python provision.py
 ```
 
 Once you complete the process, you can find `.env` file under the `src/` folder. Your `.env` file should look like this:
 
-```
+```bash
 AZURE_SUBSCRIPTION_ID=...
 AZURE_RESOURCE_GROUP=...
 AZURE_AI_HUB_NAME=...
@@ -111,25 +123,6 @@ AZURE_OPENAI_CHAT_DEPLOYMENT=...
 
 Those environment variables will be required for the following steps to work.
 
-To leverage Microsoft Entra ID (AAD) authentification, you'll need to assign to yourself the role "Cognitive Services OpenAI User" to the Azure OpenAI Instance:
-
-1. Find your `OBJECT_ID`:
-
-    ```bash
-    az ad signed-in-user show --query id -o tsv
-    ```
-
-2. Then run the following command to grand permissions:
-
-    ```bash
-    az role assignment create \
-            --role "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd" \
-            --assignee-object-id "$OBJECT_ID" \
-            --scope /subscriptions/"$AZURE_SUBSCRIPTION_ID"/resourceGroups/"$AZURE_RESOURCE_GROUP" \
-            --assignee-principal-type User
-    ```
-
-Alternatively, you can set env var `AZURE_OPENAI_API_KEY` with your api key.
 
 #### Step 2. Create an assistant
 

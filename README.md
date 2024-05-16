@@ -127,7 +127,7 @@ azd provision
 ```
 Once you complete the process, you can find `.env` file under .azure\{env} folder. Your `.env` file should look like this:
 
-```
+```bash
 AZURE_ENV_NAME=...
 AZURE_TENANT_ID=...
 AZURE_SUBSCRIPTION_ID=...
@@ -143,7 +143,7 @@ AZURE_OPENAI_EVALUATION_DEPLOYMENT="evaluation-35-turbo"
 
 It will also programmatically create an assistant in your Azure OpenAI instance. So you should expect an environment variable:
 
-```
+```bash
 AZURE_OPENAI_ASSISTANT_ID=...
 ```
 
