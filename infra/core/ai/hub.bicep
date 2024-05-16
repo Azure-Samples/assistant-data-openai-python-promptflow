@@ -57,20 +57,6 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
     discoveryUrl: 'https://${location}.api.azureml.ms/discovery'
   }
 
-  resource aiServicesConnection 'connections' = {
-    name: 'ai-services-connection'
-    properties: {
-      category: 'AIServices'
-      authType: 'AAD'
-      isSharedToAll: true
-      target: aiServices.properties.endpoint
-      metadata: {
-        ApiType: 'azure'
-        ResourceId: aiServices.id
-      }
-    }
-  }
-
   resource openAiConnection 'connections' = {
     name: 'aoai-connection'
     properties: {
