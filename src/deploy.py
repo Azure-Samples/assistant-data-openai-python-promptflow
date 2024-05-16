@@ -112,6 +112,9 @@ def main(cli_args: List[str] = None):
     client = get_ml_client()
 
     # specify the endpoint creation settings
+    assert (
+        args.endpoint_name is not None
+    ), "Please provide an endpoint name using --endpoint-name, or set env var AZUREAI_ENDPOINT_NAME."
     try:
         endpoint = client.online_endpoints.get(args.endpoint_name)
         logging.info(f"Found existing endpoint: {args.endpoint_name}")
@@ -123,6 +126,56 @@ def main(cli_args: List[str] = None):
                 "enforce_access_to_default_secret_stores": "enabled"  # if you want secret injection support
             },
         )
+
+    # handle credentials that the endpoint will need to access the Azure OpenAI resource
+    try:
+        connection = client.connections.get(args.aoai_connection_name)
+    except:
+        raise Exception(
+            f"Connection {args.aoai_connection_name} not found in AI project {os.environ.get('AZUREAI_PROJECT_NAME')}. Please create a connection with the name {args.aoai_connection_name} in your Azure AI workspace or use --aoai-connection-name with the right connection name."
+        )
+
+    connection_string = f"azureml://connections/{args.aoai_connection_name}"
+    logging.info(f"Using connection: {connection_string}")
+
+    # our deployment will need environment variables to store secrets
+    # but those should be injected from the service side, not from our local code
+    deployment_env_vars = {}
+    if connection.credentials.type == "api_key":
+        logging.info(
+            f"Using API key for the deployment to authentificate for Azure OpenAI."
+        )
+        # ${{azureml://connection/aoai-connection/target}} will inject the target value from the connection during deployment time
+        deployment_env_vars["AZURE_OPENAI_ENDPOINT"] = (
+            "${{" + connection_string + "/target}}"
+        )
+        # ${{azureml://connection/aoai-connection/credentials/key}} will inject the key value from the connection during deployment time
+        deployment_env_vars["AZURE_OPENAI_API_KEY"] = (
+            "${{" + connection_string + "/credentials/key}}"
+        )
+    elif connection.credentials.type == "aad":
+        # ${{azureml://connection/aoai-connection/target}} will inject the target value from the connection during deployment time
+        deployment_env_vars["AZURE_OPENAI_ENDPOINT"] = (
+            "${{" + connection_string + "/target}}"
+        )
+        logging.warning(
+            "Using Azure AD authentification for Azure OpenAI. Please ensure that the Azure OpenAI resource is configured to accept Azure AD authentification."
+        )
+    else:
+        raise ValueError(
+            f"Connection {args.aoai_connection_name} credentials type {connection.credentials.type} not supported in this script (yet)."
+        )
+
+    # other non-secret variables
+    deployment_env_vars["AZURE_OPENAI_ASSISTANT_ID"] = os.getenv(
+        "AZURE_OPENAI_ASSISTANT_ID"
+    )
+    deployment_env_vars["AZURE_OPENAI_API_VERSION"] = os.getenv(
+        "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
+    )
+    deployment_env_vars["AZURE_OPENAI_CHAT_DEPLOYMENT"] = os.getenv(
+        "AZURE_OPENAI_CHAT_DEPLOYMENT"
+    )
 
     model = Model(
         name="copilot_flow_model",
@@ -157,35 +210,14 @@ def main(cli_args: List[str] = None):
         },
     )
 
-    connection_string = f"azureml://connections/{args.aoai_connection_name}"
-    logging.info(f"Using connection: {connection_string}")
-
-    # at deployment time, environment variables will be resolved from the connections
-    environment_variables = {
-        # those first variables are drawing from the hub connections
-        "AZURE_OPENAI_ENDPOINT": os.getenv("AZURE_OPENAI_ENDPOINT")
-        or "${{" + connection_string + "/target}}",
-        "AZURE_OPENAI_ASSISTANT_ID": os.getenv("AZURE_OPENAI_ASSISTANT_ID"),
-        "AZURE_OPENAI_API_VERSION": os.getenv(
-            "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
-        ),
-        "AZURE_OPENAI_CHAT_DEPLOYMENT": os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
-    }
-    if "AZURE_OPENAI_API_KEY" in os.environ:
-        logging.warn(
-            "Using key-based authentification, instead we recommend using Azure AD authentification instead."
-        )
-        logging.info(
-            f"The key will not be injected from your environment, but from the Project connection '{args.aoai_connection_name}'."
-        )
-        environment_variables["AZURE_OPENAI_API_KEY"] = os.getenv(
-            "${{" + connection_string + "/credentials/key}}"
-        )
-
     # NOTE: this is a required fix
-    environment_variables["PRT_CONFIG_OVERRIDE"] = (
+    deployment_env_vars["PRT_CONFIG_OVERRIDE"] = (
         f"deployment.subscription_id={client.subscription_id},deployment.resource_group={client.resource_group_name},deployment.workspace_name={client.workspace_name},deployment.endpoint_name={args.endpoint_name},deployment.deployment_name={args.deployment_name}"
     )
+
+    logging.info(f"Deployment will have the following environment variables:")
+    for key in deployment_env_vars:
+        logging.info(f"{key}=***")
 
     # specify the deployment creation settings
     deployment = ManagedOnlineDeployment(  # defaults to key auth_mode
@@ -195,7 +227,7 @@ def main(cli_args: List[str] = None):
         environment=environment,
         instance_type=args.instance_type,  # can point to documentation for this: https://learn.microsoft.com/en-us/azure/machine-learning/reference-managed-online-endpoints-vm-sku-list?view=azureml-api-2
         instance_count=args.instance_count,
-        environment_variables=environment_variables,
+        environment_variables=deployment_env_vars,
     )
 
     # 1. create endpoint
