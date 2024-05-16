@@ -214,7 +214,7 @@ def main():
     )
 
     print("-----Summarized Metrics-----")
-    print(tabulate(tabular_result, headers="keys", tablefmt="pretty"))
+    print(tabulate(result, headers="keys", tablefmt="pretty"))
     print("-----Tabular Result-----")
     print(
         tabulate(

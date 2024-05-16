@@ -17,6 +17,12 @@ aoai:
   # IMPORTANT: for assistant, region needs to be in [australiaeast, eastus, eastus2, francecentral, norwayeast, swedencentral, uksouth]
   # region: "eastus"
   aoai_resource_name: "<my-new-aoai>"
+  kind: "OpenAI" # use OpenAI for AIServices
+
+  # specify which auth mode to connect from local code to AzureOpenAI resource
+  auth:
+    mode: "aad" # use aad [recommended] or key [default]
+    role: "a001fd3d-188f-4b5d-821b-7da978bf7442" # Cognitive Service OpenAI Contributor
 
   # specify the name of the existing/creating hub connection for this resource
   connection_name: "aoai-connection" # this needs to match with name used for env vars below
@@ -30,6 +36,7 @@ aoai:
     - name: "evaluation-35-turbo"
       model: "gpt-35-turbo"
       version: "0301" # evaluation works more reliably on a non-preview model
+      # version: "0613"
       capacity: 30
 
 environment:
@@ -37,6 +44,10 @@ environment:
   variables:
     # those env vars are drawn from the AI hub connections
     AZURE_OPENAI_ENDPOINT: "azureml://connections/${aoai.connection_name}/target"
+    # we're not using key auth, so this is commented out
+    # see aoai.auth.mode above
+    # AZURE_OPENAI_API_KEY: "azureml://connections/${aoai.connection_name}/credentials/key"
+
     # those are just constants
     AZURE_OPENAI_CHAT_DEPLOYMENT: "${aoai.deployments[0].name}"
     AZURE_OPENAI_EVALUATION_DEPLOYMENT: "${aoai.deployments[1].name}"
