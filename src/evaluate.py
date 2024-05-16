@@ -214,7 +214,7 @@ def main():
     )
 
     print("-----Summarized Metrics-----")
-    print(tabulate(result["metrics"], headers="keys", tablefmt="pretty"))
+    print(result["metrics"])
     print("-----Tabular Result-----")
     print(tabulate(tabular_result, headers="keys", tablefmt="pretty", maxcolwidths=50))
     print(f"View evaluation results in AI Studio: {result['studio_url']}")
