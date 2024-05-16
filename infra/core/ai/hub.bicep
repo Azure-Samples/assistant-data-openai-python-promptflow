@@ -17,7 +17,7 @@ param aiSearchName string = ''
 @description('The endpoint to the OpenAI Language Model Instance API to use for the AI Studio Hub Resource')
 param openAiEndpoint string = ''
 @description('The endpoint to the AI Search resource to use for the AI Studio Hub Resource')
-param aiSearchEndpoint string = ''
+param aiSearchEndpoint string = 'https://${aiSearchName}.search.windows.net/'
 @description('The SKU name to use for the AI Studio Hub Resource')
 param skuName string = 'Basic'
 @description('The SKU tier to use for the AI Studio Hub Resource')
@@ -57,6 +57,20 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
     discoveryUrl: 'https://${location}.api.azureml.ms/discovery'
   }
 
+  resource aiServicesConnection 'connections' = {
+    name: 'ai-services-connection'
+    properties: {
+      category: 'AIServices'
+      authType: 'AAD'
+      isSharedToAll: true
+      target: aiServices.properties.endpoint
+      metadata: {
+        ApiType: 'azure'
+        ResourceId: aiServices.id
+      }
+    }
+  }
+
   resource openAiConnection 'connections' = {
     name: 'aoai-connection'
     properties: {
@@ -67,19 +81,6 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
       metadata: {
         ApiType: 'azure'
         ResourceId: aiServices.id
-      }
-    }
-  }
- 
-  resource contentSafetyConnection 'connections' = {
-    name: 'contentsafety-connection'
-    properties: {
-      category: 'AzureContentSafety'
-      authType: 'ApiKey'
-      isSharedToAll: true
-      target: aiServices.properties.endpoints['Content Safety']
-      credentials: {
-        key: aiServices.listKeys().key1
       }
     }
   }
