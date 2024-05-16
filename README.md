@@ -147,6 +147,13 @@ It will also programmatically create an assistant in your Azure OpenAI instance.
 AZURE_OPENAI_ASSISTANT_ID=...
 ```
 
+**Troubleshooting** - If you do not see a `.env` file at the root of the repo in the end of this process, it means the `postprovision` steps have failed. Before moving foward, do the following:
+
+```bash
+cp ./.azure/$AZURE_ENV_NAME/.env ./.env
+python -m pip install -r ./src/requirements.txt
+python ./src/create_assistant.py --export-env ./.env
+```
 
 ### Step 2. Deploy
 
@@ -161,7 +168,7 @@ azd deploy
 To run the flow locally, use `pf` cli:
 
 ```bash
-pf flow test --flow ./copilot_sdk_flow/flow.flex.yaml --inputs chat_input="which month has peak sales in 2023"
+pf flow test --flow ./src/copilot_sdk_flow/flow.flex.yaml --inputs chat_input="which month has peak sales in 2023"
 ```
 
 You can add `--ui` to run the local test bed.
@@ -171,7 +178,7 @@ You can add `--ui` to run the local test bed.
 The evaluation script consists in running the completion function on a groundtruth dataset and evaluate the results.
 
 ```bash
-python evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./data/ground_truth_sample.jsonl --metrics similarity
+python ./src/evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./src/data/ground_truth_sample.jsonl --metrics similarity
 ```
 
 This will print out the results of the evaluation, as well as a link to the Azure AI Studio to browse the results online.
@@ -185,7 +192,9 @@ To clean up all the resources created by this sample:
 3. When asked if you want to permanently delete the resources, enter `y`
 
 The resource group and all the resources will be deleted.
+
 ## Costs
+
 You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
 
 - Azure OpenAI - Standard tier, GPT-4, GPT-35-turbo and Ada models.  [See Pricing](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)
