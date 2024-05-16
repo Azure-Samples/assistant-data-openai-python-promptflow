@@ -104,11 +104,11 @@ The script will:
 - Assign the right RBAC assignent (Cognitive Service OpenAI Contributor) towards the Azure OpenAI resource to leverage AAD.
 - It will then populate a `.env` file for you that references the provisioned or attached resources, including your keys (if specified).
 
-**IMPORTANT**: By default, provisioning relies on Microsoft Entra ID (AAD) authentification instead of keys. You'll need to assign to yourself the role "Cognitive Services OpenAI User" to the Azure OpenAI Instance. Alternatively, you can set env var `AZURE_OPENAI_API_KEY` with your api key. But we recommend Entra ID instead for a more secure setup.
-
 ```bash
 python provision.py
 ```
+
+**IMPORTANT**: By default, provisioning relies on Microsoft Entra ID (AAD) authentification instead of keys. The provisioning script will assign to yourself the role "Cognitive Services OpenAI User" to the specified Azure OpenAI Instance. Alternatively, you can set env var `AZURE_OPENAI_API_KEY` with your api key. But we recommend Entra ID instead for a more secure setup.
 
 Once you complete the process, you can find `.env` file under the `src/` folder. Your `.env` file should look like this:
 
