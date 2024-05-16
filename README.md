@@ -29,7 +29,7 @@ This document focused on instructions for **azd**. To discover how to evaluate a
 - An Azure subscription - [Create one for free](https://azure.microsoft.com/free/cognitive-services)
 - Access granted to Azure OpenAI in the desired Azure subscription  
   Currently, access to this service is granted only by application. You can apply for access to Azure OpenAI by completing the form at [aka.ms/oai/access](https://aka.ms/oai/access).
-- Python 3.10 or later version
+- Python 3.10 or 3.11 versions
 
 Note: This azd template uses `gpt-35-turbo` (1106) or `gpt-4` (1106) for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a region during deployment accordingly.
 
