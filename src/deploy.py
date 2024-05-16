@@ -244,9 +244,11 @@ def main(cli_args: List[str] = None):
     endpoint.traffic = {args.deployment_name: 100}  # set to 100% of traffic
     client.begin_create_or_update(endpoint).result()
 
-    print(f"Your online endpoint name is: {created_endpoint}")
-    print(f"Your deployment name is: {created_deployment}")
-    return created_endpoint, created_deployment
+    print(f"Your online endpoint name is: {created_endpoint.name}")
+    print(f"Your deployment name is: {created_deployment.name}")
+
+    test_url = f"https://ai.azure.com/projectdeployments/realtime/{args.endpoint_name}/{args.deployment_name}/detail?wsid=/subscriptions/{client.subscription_id}/resourceGroups/{client.resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{client.workspace_name}"
+    print(f"Test your deployment in Azure AI Studio at: {test_url}")
 
 
 if __name__ == "__main__":

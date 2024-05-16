@@ -124,7 +124,7 @@ AZURE_OPENAI_CHAT_DEPLOYMENT=...
 Those environment variables will be required for the following steps to work.
 
 
-#### Step 2. Create an assistant
+### Step 2. Create an assistant
 
 For the code to run, you need to create an assistant. This means setting up an assistant in your Azure OpenAI resource.
 You will get an assistant id you can inject in the code through an env var to run the assistant.
@@ -145,7 +145,7 @@ AZURE_OPENAI_ASSISTANT_ID=[IDENTIFIER]
 ******************************************************************
 ```
 
-#### Step 3. Run the assistant flow locally
+### Step 3. Run the assistant flow locally
 
 To run the flow locally, use `pf` cli:
 
@@ -170,5 +170,5 @@ This will print out the results of the evaluation, as well as a link to the Azur
 To deploy the flow in your Azure AI project under a managed endpoint, use:
 
 ```bash
-python deploy.py
+python deploy.py --endpoint-name [UNIQUE_NAME]
 ```
