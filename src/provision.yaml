@@ -5,17 +5,17 @@ ai:
   resource_group_name: "<your_resource_group>"
   hub_name: "<hub_name>"
   project_name: "<project_name>"
-  region: "eastus"
+  location: "eastus"
 
 aoai:
   # use references to an existing AOAI resource to connect it to your hub
   # or else provision.py will create a resource with those references
 
-  # uncomment only if sub/rg/region are different from AI Hub
+  # uncomment only if sub/rg/location are different from AI Hub
   # subscription_id: "<your-subscription-id>"
   # resource_group_name: "<your_resource_group>"
-  # IMPORTANT: for assistant, region needs to be in [australiaeast, eastus, eastus2, francecentral, norwayeast, swedencentral, uksouth]
-  # region: "eastus"
+  # IMPORTANT: for assistant, location needs to be in [australiaeast, eastus, eastus2, francecentral, norwayeast, swedencentral, uksouth]
+  # location: "eastus"
   aoai_resource_name: "<my-new-aoai>"
   kind: "OpenAI" # use OpenAI for AIServices
 
