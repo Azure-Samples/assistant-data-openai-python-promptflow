@@ -14,10 +14,6 @@ param containerRegistryId string = ''
 param aiServicesName string
 @description('The Azure Cognitive Search service name to use for the AI Studio Hub Resource')
 param aiSearchName string = ''
-@description('The endpoint to the OpenAI Language Model Instance API to use for the AI Studio Hub Resource')
-param openAiEndpoint string = ''
-@description('The endpoint to the AI Search resource to use for the AI Studio Hub Resource')
-param aiSearchEndpoint string = 'https://${aiSearchName}.search.windows.net/'
 @description('The SKU name to use for the AI Studio Hub Resource')
 param skuName string = 'Basic'
 @description('The SKU tier to use for the AI Studio Hub Resource')
@@ -63,7 +59,7 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
       category: 'AzureOpenAI'
       authType: 'AAD'
       isSharedToAll: true
-      target: openAiEndpoint
+      target: aiServices.properties.endpoints['OpenAI Language Model Instance API']
       metadata: {
         ApiType: 'azure'
         ResourceId: aiServices.id
@@ -78,7 +74,7 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
         category: 'CognitiveSearch'
         authType: 'ApiKey'
         isSharedToAll: true
-        target: aiSearchEndpoint
+        target: 'https://${aiSearchName}.search.windows.net/'
         credentials: {
           key: !empty(aiSearchName) ? search.listAdminKeys().primaryKey : ''
         }

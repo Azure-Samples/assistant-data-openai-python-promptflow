@@ -52,9 +52,7 @@ module hub '../ai/hub.bicep' = {
     containerRegistryId: hubDependencies.outputs.containerRegistryId
     appInsightsId: hubDependencies.outputs.appInsightsId
     aiServicesName: hubDependencies.outputs.aiServicesName
-    openAiEndpoint: hubDependencies.outputs.openAiEndpoint
     aiSearchName: hubDependencies.outputs.searchName
-    aiSearchEndpoint: hubDependencies.outputs.searchEndpoint
   }
 }
 
