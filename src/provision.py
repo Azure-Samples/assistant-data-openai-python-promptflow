@@ -489,7 +489,7 @@ class ConnectionSpec(BaseModel):
             resource_target = rsc_client.accounts.get(
                 resource_group_name=self.resource.resource_group_name,
                 account_name=self.resource.aoai_resource_name,
-            ).properties.endpoint
+            ).properties.endpoints["OpenAI Language Model Instance API"]
 
             # get keys
             rsc_keys = rsc_client.accounts.list_keys(
@@ -675,6 +675,11 @@ def build_provision_plan(config) -> ProvisioningPlan:
         region=aoai_region,
     )
     plan.add_resource(aoai)
+    plan.add_resource(
+        ConnectionSpec(
+            hub=ai_hub, name=config.aoai.connection_name, auth="key", resource=aoai
+        )
+    )
     if hasattr(config.aoai, "auth") and config.aoai.auth.mode == "aad":
         plan.add_resource(
             RBACRoleAssignment(
@@ -684,7 +689,7 @@ def build_provision_plan(config) -> ProvisioningPlan:
             )
         )
 
-    if config.aoai.deployments:
+    if hasattr(config.aoai, "deployments") and config.aoai.deployments:
         for deployment in config.aoai.deployments:
             plan.add_resource(
                 AzureOpenAIDeployment(
