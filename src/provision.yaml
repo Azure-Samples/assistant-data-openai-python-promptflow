@@ -17,6 +17,7 @@ aoai:
   # IMPORTANT: for assistant, region needs to be in [australiaeast, eastus, eastus2, francecentral, norwayeast, swedencentral, uksouth]
   # region: "eastus"
   aoai_resource_name: "<my-new-aoai>"
+  kind: "OpenAI" # use OpenAI for AIServices
 
   # specify which auth mode to connect from local code to AzureOpenAI resource
   auth:

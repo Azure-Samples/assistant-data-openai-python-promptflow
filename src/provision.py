@@ -320,6 +320,7 @@ class AzureAISearch(AzureScopedResource):
 
 class AzureOpenAIResource(AzureScopedResource):
     aoai_resource_name: str
+    kind: Optional[str] = "OpenAI"
 
     def scope(self) -> str:
         return f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{self.aoai_resource_name}"
@@ -352,7 +353,7 @@ class AzureOpenAIResource(AzureScopedResource):
             account_name=self.aoai_resource_name,
             account={
                 "sku": {"name": "S0"},
-                "kind": "OpenAI",
+                "kind": self.kind,
                 "location": self.region,
             },
         ).result()
@@ -673,6 +674,7 @@ def build_provision_plan(config) -> ProvisioningPlan:
         resource_group_name=aoai_resource_group_name,
         aoai_resource_name=config.aoai.aoai_resource_name,
         region=aoai_region,
+        kind=config.aoai.kind if hasattr(config.aoai, "kind") else "OpenAI",
     )
     plan.add_resource(aoai)
     plan.add_resource(
