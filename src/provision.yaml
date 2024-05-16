@@ -10,12 +10,13 @@ ai:
 aoai:
   # use references to an existing AOAI resource to connect it to your hub
   # or else provision.py will create a resource with those references
-  subscription_id: "<your-subscription-id>"
-  resource_group_name: "<your_resource_group>"
-  aoai_resource_name: "<my-new-aoai>"
 
+  # uncomment only if sub/rg/region are different from AI Hub
+  # subscription_id: "<your-subscription-id>"
+  # resource_group_name: "<your_resource_group>"
   # IMPORTANT: for assistant, region needs to be in [australiaeast, eastus, eastus2, francecentral, norwayeast, swedencentral, uksouth]
-  region: "eastus"
+  # region: "eastus"
+  aoai_resource_name: "<my-new-aoai>"
 
   # specify the name of the existing/creating hub connection for this resource
   connection_name: "aoai-connection" # this needs to match with name used for env vars below
@@ -30,6 +31,6 @@ environment:
   # below will be used for --export-env argument
   variables:
     # those env vars are drawn from the AI hub connections
-    AZURE_OPENAI_ENDPOINT: "azureml://connections/aoai-connection/target"
+    AZURE_OPENAI_ENDPOINT: "azureml://connections/${{aoai.connection_name}}/target"
     # those are just constants
-    AZURE_OPENAI_CHAT_DEPLOYMENT: "gpt-35-turbo"
+    AZURE_OPENAI_CHAT_DEPLOYMENT: "${{aoai.deployments[0].name}}"
