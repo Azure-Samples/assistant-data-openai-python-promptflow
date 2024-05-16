@@ -44,6 +44,10 @@ environment:
   variables:
     # those env vars are drawn from the AI hub connections
     AZURE_OPENAI_ENDPOINT: "azureml://connections/${aoai.connection_name}/target"
+    # we're not using key auth, so this is commented out
+    # see aoai.auth.mode above
+    # AZURE_OPENAI_API_KEY: "azureml://connections/${aoai.connection_name}/credentials/key"
+
     # those are just constants
     AZURE_OPENAI_CHAT_DEPLOYMENT: "${aoai.deployments[0].name}"
     AZURE_OPENAI_EVALUATION_DEPLOYMENT: "${aoai.deployments[1].name}"
