@@ -31,7 +31,7 @@ This document focused on instructions for **azd**. To discover how to evaluate a
   Currently, access to this service is granted only by application. You can apply for access to Azure OpenAI by completing the form at [aka.ms/oai/access](https://aka.ms/oai/access).
 - Python 3.10 or 3.11 versions
 
-Note: This azd template uses `gpt-35-turbo` (1106) or `gpt-4` (1106) for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a region during deployment accordingly.
+Note: This azd template uses `gpt-35-turbo` (1106) or `gpt-4` (1106) for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a location during deployment accordingly.
 
 ### Installation
 
@@ -68,7 +68,7 @@ Note: This azd template uses `gpt-35-turbo` (1106) or `gpt-4` (1106) for assista
 
 ## Before your start: check your quota
 
-To ensure you have quota to provision `gpt-35-turbo` version `1106`, you can either go to [oai.azure.com](https://oai.azure.com/) and check the Quota page in a given region.
+To ensure you have quota to provision `gpt-35-turbo` version `1106`, you can either go to [oai.azure.com](https://oai.azure.com/) and check the Quota page in a given location.
 
 You can also try running our experimental script to check quota in your subscription:
 
@@ -79,7 +79,7 @@ python ./src/check_quota.py --subscription-id [SUBSCRIPTION_ID]
 
 > Note: this script is a tentative to help locating quota, but it might provide numbers that are not accurate. The [Azure OpenAI portal](https://oai.azure.com/) and our [docs of quota limits](https://learn.microsoft.com/en-us/azure/ai-services/openai/quotas-limits) would be the source of truth.
 
-It will show a table of the regions where you have `gpt-35-turbo` available.
+It will show a table of the locations where you have `gpt-35-turbo` available.
 
 ```
 +--------------+---------+--------+---------------+----------+-------+-----------------+
@@ -101,7 +101,7 @@ It will show a table of the regions where you have `gpt-35-turbo` available.
 +--------------+---------+--------+---------------+----------+-------+-----------------+
 ```
 
-Pick any region where you have both `1106` and `0301`, or both `1106` and `0613`, with remaining_quota above 60.
+Pick any location where you have both `1106` and `0301`, or both `1106` and `0613`, with remaining_quota above 60.
 
 By default, `azd provision` will use `1106` for the chat model, and `0301` for the evaluation model. To modify which version to use for the chat and evaluation models, use the env vars before running `azd provision`.
 
@@ -148,6 +148,13 @@ It will also programmatically create an assistant in your Azure OpenAI instance.
 AZURE_OPENAI_ASSISTANT_ID=...
 ```
 
+**Troubleshooting** - If you do not see a `.env` file at the root of the repo in the end of this process, it means the `postprovision` steps have failed. Before moving foward, do the following:
+
+```bash
+cp ./.azure/$AZURE_ENV_NAME/.env ./.env
+python -m pip install -r ./src/requirements.txt
+python ./src/create_assistant.py --export-env ./.env
+```
 
 ### Step 2. Deploy
 
@@ -162,7 +169,7 @@ azd deploy
 To run the flow locally, use `pf` cli:
 
 ```bash
-pf flow test --flow ./copilot_sdk_flow/flow.flex.yaml --inputs chat_input="which month has peak sales in 2023"
+pf flow test --flow ./src/copilot_sdk_flow/flow.flex.yaml --inputs chat_input="which month has peak sales in 2023"
 ```
 
 You can add `--ui` to run the local test bed.
@@ -172,7 +179,7 @@ You can add `--ui` to run the local test bed.
 The evaluation script consists in running the completion function on a groundtruth dataset and evaluate the results.
 
 ```bash
-python evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./data/ground_truth_sample.jsonl --metrics similarity
+python ./src/evaluate.py --evaluation-name assistant-dev --evaluation-data-path ./src/data/ground_truth_sample.jsonl --metrics similarity
 ```
 
 This will print out the results of the evaluation, as well as a link to the Azure AI Studio to browse the results online.
@@ -186,7 +193,9 @@ To clean up all the resources created by this sample:
 3. When asked if you want to permanently delete the resources, enter `y`
 
 The resource group and all the resources will be deleted.
+
 ## Costs
+
 You can estimate the cost of this project's architecture with [Azure's pricing calculator](https://azure.microsoft.com/pricing/calculator/)
 
 - Azure OpenAI - Standard tier, GPT-4, GPT-35-turbo and Ada models.  [See Pricing](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)

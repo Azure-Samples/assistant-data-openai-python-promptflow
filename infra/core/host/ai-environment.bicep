@@ -10,8 +10,8 @@ param projectName string
 param keyVaultName string
 @description('The Storage Account resource name.')
 param storageAccountName string
-@description('The Open AI resource name.')
-param openAiName string
+@description('The AI Services resource name.')
+param aiServicesName string
 @description('The Open AI model deployments.')
 param openAiModelDeployments array = []
 @description('The Log Analytics resource name.')
@@ -34,7 +34,7 @@ module hubDependencies '../ai/hub-dependencies.bicep' = {
     containerRegistryName: containerRegistryName
     appInsightsName: appInsightsName
     logAnalyticsName: logAnalyticsName
-    openAiName: openAiName
+    aiServicesName: aiServicesName
     openAiModelDeployments: openAiModelDeployments
     searchName: searchName
   }
@@ -51,7 +51,7 @@ module hub '../ai/hub.bicep' = {
     storageAccountId: hubDependencies.outputs.storageAccountId
     containerRegistryId: hubDependencies.outputs.containerRegistryId
     appInsightsId: hubDependencies.outputs.appInsightsId
-    openAiName: hubDependencies.outputs.openAiName
+    aiServicesName: hubDependencies.outputs.aiServicesName
     aiSearchName: hubDependencies.outputs.searchName
   }
 }
@@ -95,7 +95,7 @@ output containerRegistryEndpoint string = hubDependencies.outputs.containerRegis
 output storageAccountName string = hubDependencies.outputs.storageAccountName
 
 // Open AI
-output openAiName string = hubDependencies.outputs.openAiName
+output aiServicesName string = hubDependencies.outputs.aiServicesName
 output openAiEndpoint string = hubDependencies.outputs.openAiEndpoint
 
 // Search
