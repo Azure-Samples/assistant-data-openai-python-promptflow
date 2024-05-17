@@ -5,8 +5,8 @@ param tags object = {}
 param keyVaultName string
 @description('Name of the storage account')
 param storageAccountName string
-@description('Name of the OpenAI cognitive services')
-param openAiName string
+@description('Name of the AI Services resource')
+param aiServicesName string
 param openAiModelDeployments array = []
 @description('Name of the Log Analytics workspace')
 param logAnalyticsName string = ''
@@ -128,7 +128,7 @@ module cognitiveServices '../ai/cognitiveservices.bicep' = {
   params: {
     location: location
     tags: tags
-    name: openAiName
+    name: aiServicesName
     kind: 'AIServices'
     deployments: openAiModelDeployments
   }
@@ -160,8 +160,8 @@ output appInsightsName string = !empty(appInsightsName) ? appInsights.outputs.na
 output logAnalyticsWorkspaceId string = !empty(logAnalyticsName) ? logAnalytics.outputs.id : ''
 output logAnalyticsWorkspaceName string = !empty(logAnalyticsName) ? logAnalytics.outputs.name : ''
 
-output openAiId string = cognitiveServices.outputs.id
-output openAiName string = cognitiveServices.outputs.name
+output aiServicesId string = cognitiveServices.outputs.id
+output aiServicesName string = cognitiveServices.outputs.name
 output openAiEndpoint string = cognitiveServices.outputs.endpoints['OpenAI Language Model Instance API']
 
 output searchId string = !empty(searchName) ? search.outputs.id : ''
