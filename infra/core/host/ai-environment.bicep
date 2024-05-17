@@ -6,6 +6,8 @@ param location string
 param hubName string
 @description('The AI Project resource name.')
 param projectName string
+@description('The User Assigned Identity resource name.')
+param uaiName string
 @description('The Key Vault resource name.')
 param keyVaultName string
 @description('The Storage Account resource name.')
@@ -29,6 +31,7 @@ module hubDependencies '../ai/hub-dependencies.bicep' = {
   params: {
     location: location
     tags: tags
+    uaiName: uaiName
     keyVaultName: keyVaultName
     storageAccountName: storageAccountName
     containerRegistryName: containerRegistryName
@@ -62,6 +65,7 @@ module project '../ai/project.bicep' = {
     location: location
     tags: tags
     name: projectName
+    uaiResourceId: hubDependencies.outputs.uaiResourceId
     displayName: projectName
     hubName: hub.outputs.name
   }
@@ -78,6 +82,10 @@ output hubPrincipalId string = hub.outputs.principalId
 // Project
 output projectName string = project.outputs.name
 output projectPrincipalId string = project.outputs.principalId
+
+// User Assigned Identity (Hub/Project)
+output uaiResourceId string = hubDependencies.outputs.uaiResourceId
+output uaiPrincipalId string = hubDependencies.outputs.uaiPrincipalId
 
 // Key Vault
 output keyVaultName string = hubDependencies.outputs.keyVaultName

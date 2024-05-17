@@ -16,6 +16,8 @@ param resourceGroupName string = ''
 param aiHubName string = ''
 @description('The Azure AI Studio project name. If ommited will be generated')
 param aiProjectName string = ''
+@description('The User Assigned Identity resource name. If ommited will be generated')
+param uaiName string = ''
 @description('The application insights resource name. If ommited will be generated')
 param appInsightsName string = ''
 @description('The Open AI resource name. If ommited will be generated')
@@ -65,6 +67,7 @@ module ai 'core/host/ai-environment.bicep' = {
     tags: tags
     hubName: !empty(aiHubName) ? aiHubName : 'ai-hub-${resourceToken}'
     projectName: !empty(aiProjectName) ? aiProjectName : 'ai-project-${resourceToken}'
+    uaiName: !empty(uaiName) ? uaiName : 'uai-${resourceToken}'
     keyVaultName: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
     storageAccountName: !empty(storageAccountName)
       ? storageAccountName
@@ -117,6 +120,7 @@ module machineLearningEndpoint './core/host/ml-online-endpoint.bicep' = {
     name: !empty(endpointName) ? endpointName : 'mloe-${resourceToken}'
     location: location
     tags: tags
+    uaiResourceId: ai.outputs.uaiResourceId
     serviceName: endpointServiceName
     aiHubName: ai.outputs.hubName
     aiProjectName: ai.outputs.projectName

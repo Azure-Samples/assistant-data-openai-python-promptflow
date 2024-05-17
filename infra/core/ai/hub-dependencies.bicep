@@ -1,6 +1,8 @@
 param location string = resourceGroup().location
 param tags object = {}
 
+@description('Name of the user assigned identity')
+param uaiName string
 @description('Name of the key vault')
 param keyVaultName string
 @description('Name of the storage account')
@@ -16,6 +18,13 @@ param appInsightsName string = ''
 param containerRegistryName string = ''
 @description('Name of the Azure Cognitive Search service')
 param searchName string = ''
+
+// provision a user assigned identify for this silo
+resource uai 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: uaiName
+  location: location
+  tags: tags
+}
 
 module keyVault '../security/keyvault.bicep' = {
   name: 'keyvault'
@@ -143,6 +152,10 @@ module search '../search/search-services.bicep' =
       name: searchName
     }
   }
+
+output uaiResourceId string = uai.id
+output uaiPrincipalId string = uai.properties.principalId
+output uaiName string = uai.name
 
 output keyVaultId string = keyVault.outputs.id
 output keyVaultName string = keyVault.outputs.name
