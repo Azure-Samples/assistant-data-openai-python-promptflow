@@ -30,6 +30,7 @@ This document focused on instructions for **azd**. To discover how to evaluate a
 - Access granted to Azure OpenAI in the desired Azure subscription  
   Currently, access to this service is granted only by application. You can apply for access to Azure OpenAI by completing the form at [aka.ms/oai/access](https://aka.ms/oai/access).
 - Python 3.10 or 3.11 versions
+- [PowerShell 7 or later](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.4&viewFallbackFrom=powershell-7.3) (Windows only)
 
 Note: This azd template uses `gpt-35-turbo` (1106) or `gpt-4` (1106) for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a location during deployment accordingly.
 
