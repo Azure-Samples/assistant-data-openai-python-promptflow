@@ -20,7 +20,7 @@ For instructions on how to use azd instead, please refer to [the repository READ
   Currently, access to this service is granted only by application. You can apply for access to Azure OpenAI by completing the form at [aka.ms/oai/access](https://aka.ms/oai/access).
 - Python 3.10 or 3.11 versions
 
-Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be available in all Azure regions. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a region during deployment accordingly.
+Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be available in all Azure locations. Check for [up-to-date region availability](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#standard-deployment-model-availability) and select a location during deployment accordingly.
 
 ### Installation
 
@@ -55,7 +55,7 @@ Note: This model uses gpt-35-turbo or gpt-4 for assistants which may not be avai
 
 ### Before your start: check your quota
 
-To ensure you have quota to provision `gpt-35-turbo` version `1106`, you can either go to [oai.azure.com](https://oai.azure.com/) and check the Quota page in a given region.
+To ensure you have quota to provision `gpt-35-turbo` version `1106`, you can either go to [oai.azure.com](https://oai.azure.com/) and check the Quota page in a given location.
 
 You can also try running our experimental script to check quota in your subscription:
 
@@ -65,7 +65,7 @@ python ./check_quota.py --subscription-id [SUBSCRIPTION_ID]
 
 > Note: this script is a tentative to help locating quota, but it might provide numbers that are not accurate. The [Azure OpenAI portal](https://oai.azure.com/) and our [docs of quota limits](https://learn.microsoft.com/en-us/azure/ai-services/openai/quotas-limits) would be the source of truth.
 
-It will show a table of the regions where you have `gpt-35-turbo` available.
+It will show a table of the locations where you have `gpt-35-turbo` available.
 
 
 ```
@@ -88,14 +88,14 @@ It will show a table of the regions where you have `gpt-35-turbo` available.
 +--------------+---------+--------+---------------+----------+-------+-----------------+
 ```
 
-Pick any region where you have both `1106` and `0301`, or both `1106` and `0613`, with remaining_quota above 60.
+Pick any location where you have both `1106` and `0301`, or both `1106` and `0613`, with remaining_quota above 60.
 
 ### Step 1 : Provision the resources
 
 The provision.py script will help provision the resources you need to run this sample.
 
 **IMPORTANT**: You **must** specify your desired resources in the file `provision.yaml` - there are notes in that file to help you.
-This file also allows you to modify the region and version numbers of the models to match
+This file also allows you to modify the location and version numbers of the models to match
 with your available quota (see previous section).
 
 The script will:

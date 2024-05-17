@@ -67,12 +67,12 @@ def get_arg_parser(parser: argparse.ArgumentParser = None) -> argparse.ArgumentP
 class AzureScopedResource(BaseModel):
     subscription_id: str
     resource_group_name: str
-    region: str
+    location: str
 
     def scope(self) -> str:
         return f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group_name}"
 
-    @field_validator("subscription_id", "resource_group_name", "region")
+    @field_validator("subscription_id", "resource_group_name", "location")
     @classmethod
     def validate_references(cls, v: str) -> str:
         if "<" in v or ">" in v:
@@ -201,7 +201,7 @@ class ResourceGroup(AzureScopedResource):
         )
         response = client.resource_groups.create_or_update(
             resource_group_name=self.resource_group_name,
-            parameters={"location": self.region},
+            parameters={"location": self.location},
         )
         return response
 
@@ -239,7 +239,7 @@ class AzureAIHub(AzureScopedResource):
 
         hub = Hub(
             name=self.hub_name,
-            location="westus",
+            location=self.location,
             resource_group=self.resource_group_name,
         )
         response = ml_client.workspaces.begin_create(hub).result()
@@ -325,7 +325,7 @@ class AzureAISearch(AzureScopedResource):
             resource_group_name=self.resource_group_name,
             search_service_name=self.search_resource_name,
             service={
-                "location": self.region,
+                "location": self.location,
                 # "properties": {"hostingMode": "default", "partitionCount": 1, "replicaCount": 3},
                 "sku": {"name": "standard"},
                 # "tags": {"app-name": "My e-commerce app"},
@@ -370,7 +370,7 @@ class AzureOpenAIResource(AzureScopedResource):
             account={
                 "sku": {"name": "S0"},
                 "kind": self.kind,
-                "location": self.region,
+                "location": self.location,
                 "properties": {
                     # to hit api directly via endpoint
                     "custom_sub_domain_name": self.aoai_resource_name
@@ -606,14 +606,14 @@ def build_provision_plan(config) -> ProvisioningPlan:
         ResourceGroup(
             subscription_id=config.ai.subscription_id,
             resource_group_name=config.ai.resource_group_name,
-            region=config.ai.region,
+            location=config.ai.location,
         )
     )
     ai_hub = AzureAIHub(
         subscription_id=config.ai.subscription_id,
         resource_group_name=config.ai.resource_group_name,
         hub_name=config.ai.hub_name,
-        region=config.ai.region,
+        location=config.ai.location,
     )
     plan.add_resource(ai_hub)
 
@@ -628,7 +628,7 @@ def build_provision_plan(config) -> ProvisioningPlan:
             resource_group_name=config.ai.resource_group_name,
             hub_name=config.ai.hub_name,
             project_name=config.ai.project_name,
-            region=config.ai.region,
+            location=config.ai.location,
         )
     )
 
@@ -644,23 +644,23 @@ def build_provision_plan(config) -> ProvisioningPlan:
             if hasattr(config.search, "resource_group_name")
             else config.ai.resource_group_name
         )
-        search_region = (
-            config.search.region
-            if hasattr(config.search, "region")
-            else config.ai.region
+        search_location = (
+            config.search.location
+            if hasattr(config.search, "location")
+            else config.ai.location
         )
         plan.add_resource(
             ResourceGroup(
                 subscription_id=search_subscription_id,
                 resource_group_name=search_resource_group_name,
-                region=search_region,
+                location=search_location,
             )
         )
         search = AzureAISearch(
             subscription_id=search_subscription_id,
             resource_group_name=search_resource_group_name,
             search_resource_name=config.search.search_resource_name,
-            region=search_region,
+            location=search_location,
         )
         plan.add_resource(search)
         plan.add_resource(
@@ -683,21 +683,21 @@ def build_provision_plan(config) -> ProvisioningPlan:
         if hasattr(config.aoai, "resource_group_name")
         else config.ai.resource_group_name
     )
-    aoai_region = (
-        config.aoai.region if hasattr(config.aoai, "region") else config.ai.region
+    aoai_location = (
+        config.aoai.location if hasattr(config.aoai, "location") else config.ai.location
     )
     plan.add_resource(
         ResourceGroup(
             subscription_id=aoai_subscription_id,
             resource_group_name=aoai_resource_group_name,
-            region=aoai_region,
+            location=aoai_location,
         )
     )
     aoai = AzureOpenAIResource(
         subscription_id=aoai_subscription_id,
         resource_group_name=aoai_resource_group_name,
         aoai_resource_name=config.aoai.aoai_resource_name,
-        region=aoai_region,
+        location=aoai_location,
         kind=config.aoai.kind if hasattr(config.aoai, "kind") else "OpenAI",
     )
     plan.add_resource(aoai)
