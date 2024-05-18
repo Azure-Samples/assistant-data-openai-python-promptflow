@@ -15,6 +15,7 @@ from azure.ai.ml.entities import (
     Model,
     Environment,
     BuildContext,
+    OnlineRequestSettings,
 )
 
 from dotenv import load_dotenv
@@ -214,6 +215,7 @@ def main(cli_args: List[str] = None):
     deployment_env_vars["PRT_CONFIG_OVERRIDE"] = (
         f"deployment.subscription_id={client.subscription_id},deployment.resource_group={client.resource_group_name},deployment.workspace_name={client.workspace_name},deployment.endpoint_name={args.endpoint_name},deployment.deployment_name={args.deployment_name}"
     )
+    deployment_env_vars["PROMPTFLOW_RUN_MODE"] = "serving"
 
     logging.info(f"Deployment will have the following environment variables:")
     for key in deployment_env_vars:
@@ -228,6 +230,9 @@ def main(cli_args: List[str] = None):
         instance_type=args.instance_type,  # can point to documentation for this: https://learn.microsoft.com/en-us/azure/machine-learning/reference-managed-online-endpoints-vm-sku-list?view=azureml-api-2
         instance_count=args.instance_count,
         environment_variables=deployment_env_vars,
+        request_settings=OnlineRequestSettings(
+            request_timeout_ms=60000
+        ),  # using 1 min timeout to answer (long assistant process time)
     )
 
     # 1. create endpoint
