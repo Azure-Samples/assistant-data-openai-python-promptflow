@@ -69,6 +69,7 @@ class AssistantSession:
                 content=message.content,
             )
 
+    @trace
     def send(self, message: Any):
         """Sends a message back to the user.
 

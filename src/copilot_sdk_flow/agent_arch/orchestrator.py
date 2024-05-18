@@ -109,11 +109,7 @@ class Orchestrator:
             elif entry.type == "image_file":
                 file_id = entry.image_file.file_id
                 self.session.send(
-                    ImageResponse(
-                        content=base64.b64encode(
-                            self.client.files.content(file_id).read()
-                        ).decode("utf-8")
-                    )
+                    ImageResponse.from_bytes(self.client.files.content(file_id).read())
                 )
             else:
                 logging.critical("Unknown content type: {}".format(entry.type))
@@ -125,11 +121,15 @@ class Orchestrator:
             for tool_call in step.step_details.tool_calls:
                 if tool_call.type == "code":
                     self.session.send(
-                        StepNotification(type=step.type, content=tool_call.model_dump())
+                        StepNotification(
+                            type=step.type, content=str(tool_call.model_dump())
+                        )
                     )
                 elif tool_call.type == "function":
                     self.session.send(
-                        StepNotification(type=step.type, content=tool_call.model_dump())
+                        StepNotification(
+                            type=step.type, content=str(tool_call.model_dump())
+                        )
                     )
                 else:
                     logging.error(f"Unsupported tool call type: {tool_call.type}")

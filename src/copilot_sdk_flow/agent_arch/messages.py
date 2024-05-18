@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from promptflow.contracts.multimedia import Image
 
 
 class ExtensionCallMessage(BaseModel):
@@ -23,6 +24,10 @@ class FileResponse(BaseModel):
 
 class ImageResponse(BaseModel):
     content: str
+
+    @classmethod
+    def from_bytes(cls, content: bytes):
+        return ImageResponse(content=Image(content).to_base64(with_type=True))
 
 
 class StepNotification(BaseModel):

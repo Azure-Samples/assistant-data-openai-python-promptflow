@@ -53,17 +53,4 @@ def flow_entry_copilot_assistants(
     # add the user input as last message in the conversation
     conversation.append({"role": "user", "content": chat_input})
 
-    # Call the async chat function with a single question and print the response
-    if stream:
-        result = chat_completion(conversation, stream=True, context=context)
-        for r in result:
-            print(r)
-            print("\n")
-    else:
-        result = chat_completion(conversation, stream=False, context=context)
-        print(result)
-
-    return ChatResponse(
-        reply=result["choices"][0]["message"]["content"],
-        context=result["choices"][0].get("context", ""),
-    )
+    return chat_completion(conversation, stream=stream, context=context)
