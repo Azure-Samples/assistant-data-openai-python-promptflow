@@ -1,3 +1,5 @@
+"""This module contains an extension to query a local SQLite database for our demo."""
+
 import os
 from promptflow.tracing import trace
 
@@ -6,9 +8,7 @@ import pandas as pd
 import asyncio
 
 _DB_CONN = sqlite3.connect(
-    os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "data", "order_data.db"
-    ),
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "order_data.db"),
     check_same_thread=False,
 )
 
