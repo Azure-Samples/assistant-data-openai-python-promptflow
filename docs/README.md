@@ -9,10 +9,6 @@ products:
   - ai-services
   - azure-openai
 urlFragment: assistant-data-openai-python-promptflow
-name: Assistant for sales data analytics in python and promptflow
-description: This repository implements a data analytics chatbot based on the Assistants API.
-The chatbot can answer questions in natural language, and interpret them as queries
-on an example sales dataset.
 ---
 
 <!-- YAML front-matter schema: https://review.learn.microsoft.com/help/contribute/samples/process/onboarding?branch=main#supported-metadata-fields-for-readmemd -->
