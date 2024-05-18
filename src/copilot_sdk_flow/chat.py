@@ -1,12 +1,6 @@
-from typing import List
-
+"""This script contains the main chat completion function used as
+an entry point for our demo."""
 import os
-import logging
-import json
-import inspect
-import base64
-import asyncio
-
 from promptflow.tracing import trace
 
 # local imports
