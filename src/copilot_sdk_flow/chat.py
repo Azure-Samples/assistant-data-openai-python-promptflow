@@ -15,7 +15,7 @@ import sys
 # TODO: using sys.path as hotfix to be able to run the script from 3 different locations
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-from agent_arch.client import get_azure_openai_client
+from agent_arch.aoai import get_azure_openai_client
 from agent_arch.config import Configuration
 from agent_arch.sessions import SessionManager
 from agent_arch.orchestrator import Orchestrator

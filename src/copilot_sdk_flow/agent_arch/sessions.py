@@ -7,28 +7,16 @@ import traceback
 from typing import Any
 from promptflow.tracing import trace
 from collections import deque
-
-# class SessionOutputStreamAsyncIterator:
-#     def __init__(self, queue: Queue):
-#         self.queue = queue
-#         self.open = True
-
-#     def close(self):
-#         self.open = False
-
-#     async def __aiter__(self):
-#         return self
-
-#     async def __anext__(self):
-#         while self.open:
-#             try:
-#                 return self.queue.get(timeout=1)
-#             except Exception as e:
-#                 pass
-#         raise StopAsyncIteration
+from agent_arch.messages import (
+    ExtensionCallMessage,
+    ExtensionReturnMessage,
+    StepNotification,
+    TextResponse,
+    ImageResponse,
+)
 
 
-class AssistantSession:
+class Session:
     """Represents a session with the assistant."""
 
     def __init__(self, thread: Thread, client: AzureOpenAI):
@@ -76,18 +64,33 @@ class AssistantSession:
         Args:
             message (Any): The message to send.
         """
-        logging.info(f"Queueing message: {message}")
-        self.output_queue.append(message)
+        if isinstance(message, ExtensionCallMessage):
+            if message.name == "query_order_data":
+                output_message = f"_Calling extension `{message.name}` with SQL query:_\n```sql\n{message.args['sql_query']}\n```\n\n"
+            else:
+                output_message = f"_Calling extension `{message.name}`_\n\n"
+        elif isinstance(message, ExtensionReturnMessage):
+            # output_message = f"_Extension `{message.name}` returned: `{message.content}`_\n\n"
+            output_message = None
+        elif isinstance(message, StepNotification):
+            # output_message = f"_Agent moved forward with step: `{message.type}`: `{message.content}`_\n"
+            output_message = None
+        elif isinstance(message, TextResponse):
+            output_message = message.content
+        elif isinstance(message, ImageResponse):
+            output_message = "![image](" + message.content + ")\n\n"
+        else:
+            logging.critical(f"Unknown message type: {type(message)}")
+            output_message = f"`Unknown message type: {type(message)}`\n\n"
+        if output_message:
+            logging.info(
+                f"Queueing message type={message.__class__.__name__} len={len(output_message)}"
+            )
+            self.output_queue.append(output_message)
 
     def close(self):
         """Closes the session."""
         self.open = False
-
-    # def get_output_stream_iterator(self):
-    #     """Gets the output stream."""
-    #     while self.open:
-    #         yield self.output_queue.get()
-    #     # return SessionOutputStreamAsyncIterator(self.output_queue)
 
 
 class SessionManager:
@@ -103,13 +106,13 @@ class SessionManager:
         self.sessions = {}
 
     @trace
-    def create_session(self) -> AssistantSession:
+    def create_session(self) -> Session:
         """Creates a new session."""
         thread = self.aoai_client.beta.threads.create()
-        return AssistantSession(thread=thread, client=self.aoai_client)
+        return Session(thread=thread, client=self.aoai_client)
 
     @trace
-    def get_session(self, session_id: str) -> Union[AssistantSession, None]:
+    def get_session(self, session_id: str) -> Union[Session, None]:
         """Gets a session by its ID."""
         if session_id in self.sessions:
             return self.sessions[session_id]
@@ -122,13 +125,13 @@ class SessionManager:
             )
             return None
 
-        self.sessions[thread.id] = AssistantSession(
+        self.sessions[thread.id] = Session(
             assistant_id=thread.assistant_id,
             thread_id=thread.id,
         )
         return self.sessions[thread.id]
 
-    def set_session(self, session_id, session: AssistantSession):
+    def set_session(self, session_id, session: Session):
         """Sets a session."""
         self.sessions[session_id] = session
 

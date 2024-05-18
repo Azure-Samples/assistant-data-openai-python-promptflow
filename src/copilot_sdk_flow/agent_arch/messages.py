@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 from promptflow.contracts.multimedia import Image
+from typing import Any
 
 
 class ExtensionCallMessage(BaseModel):
     name: str
-    args: str
+    args: Any
 
 
 class ExtensionReturnMessage(BaseModel):

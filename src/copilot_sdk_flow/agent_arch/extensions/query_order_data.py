@@ -1,3 +1,5 @@
+"""This module contains an extension to query a local SQLite database for our demo."""
+
 import os
 from promptflow.tracing import trace
 

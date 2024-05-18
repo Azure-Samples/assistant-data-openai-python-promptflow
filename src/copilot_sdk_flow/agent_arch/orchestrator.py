@@ -102,7 +102,10 @@ class Orchestrator:
     @trace
     def process_message(self, message):
         for entry in message.content:
-            if entry.type == "text":
+            if message.role == "user":
+                # this means a message we just added
+                pass
+            elif entry.type == "text":
                 self.session.send(
                     TextResponse(role=message.role, content=entry.text.value)
                 )
@@ -148,24 +151,38 @@ class Orchestrator:
         tool_call_outputs = []
 
         for tool_call in self.run.required_action.submit_tool_outputs.tool_calls:
-            self.session.send(
-                ExtensionCallMessage(
-                    name=tool_call.function.name, args=tool_call.function.arguments
-                )
-            )
             if tool_call.type == "function":
                 # let's keep sync for now
                 logging.info(
                     f"Calling tool: {tool_call.function.name} with args: {tool_call.function.arguments}"
                 )
+                # decode the arguments from the api
+                try:
+                    extension_args = json.loads(tool_call.function.arguments)
+                except json.JSONDecodeError as e:
+                    logging.critical(f"Error decoding extension arguments: {e}")
+                    continue
+
+                # send some early message to the user
+                self.session.send(
+                    ExtensionCallMessage(
+                        name=tool_call.function.name, args=extension_args
+                    )
+                )
+
+                # invoke the extension
                 tool_call_output = self.extensions.get_extension(
                     tool_call.function.name
-                ).invoke(tool_call.function.arguments)
+                ).invoke(**extension_args)
+
+                # send success to the user
                 self.session.send(
                     ExtensionReturnMessage(
                         name=tool_call.function.name, content=tool_call_output
                     )
                 )
+
+                # store the output for the tool
                 tool_call_outputs.append(
                     {
                         "tool_call_id": tool_call.id,
