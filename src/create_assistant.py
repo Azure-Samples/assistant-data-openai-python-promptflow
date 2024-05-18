@@ -74,7 +74,7 @@ def main():
         os.path.join(
             os.path.dirname(__file__),
             "copilot_sdk_flow",
-            "functions",
+            "extensions",
             "query_order_data.json",
         )
     ) as f:

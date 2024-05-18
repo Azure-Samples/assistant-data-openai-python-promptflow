@@ -1,0 +1,159 @@
+import time
+import logging
+import json
+import base64
+
+from promptflow.tracing import trace
+
+# local imports
+from agent_arch.config import Configuration
+from agent_arch.messages import (
+    TextResponse,
+    ImageResponse,
+    ExtensionCallMessage,
+    ExtensionReturnMessage,
+)
+
+
+class Orchestrator:
+    def __init__(self, config: Configuration, client, session, extensions):
+        self.client = client
+        self.config = config
+        self.session = session
+        self.extensions = extensions
+
+        # getting the Assistant API specific constructs
+        logging.info(
+            f"Retrieving assistant with id: {config.AZURE_OPENAI_ASSISTANT_ID}"
+        )
+        self.assistant = self.client.beta.assistants.retrieve(
+            self.config.AZURE_OPENAI_ASSISTANT_ID
+        )
+        self.thread = self.session.thread
+
+        logging.info(f"Orchestrator initialized with session_id: {session.id}")
+
+        self.run = None
+        self.step_logging_cursor = None
+        self.messages_during_loop = []
+        self.last_message_id = None
+
+    @trace
+    def run_loop(self):
+        logging.info(f"Creating the run")
+        self.run = self.client.beta.threads.runs.create(
+            thread_id=self.thread.id, assistant_id=self.assistant.id
+        )
+        logging.info(f"Pre loop run status: {self.run.status}")
+
+        start_time = time.time()
+        self.step_logging_cursor = None
+
+        # keep track of messages happening during the loop
+        self.messages_during_loop = []
+
+        # loop until max_waiting_time is reached
+        while (time.time() - start_time) < self.config.ORCHESTRATOR_MAX_WAITING_TIME:
+            # checks the run regularly
+            self.run = self.client.beta.threads.runs.retrieve(
+                thread_id=self.thread.id, run_id=self.run.id
+            )
+            logging.info(
+                f"Run status: {self.run.status} (time={int(time.time() - start_time)}s, max_waiting_time={self.config.ORCHESTRATOR_MAX_WAITING_TIME})"
+            )
+
+            # check if there are messages
+            for message in self.client.beta.threads.messages.list(
+                thread_id=self.thread.id, order="asc", after=self.last_message_id
+            ):
+                message = self.client.beta.threads.messages.retrieve(
+                    thread_id=self.thread.id, message_id=message.id
+                )
+                self._process_assistant_message(message)
+                # self.session.send(message)
+                self.last_message_id = message.id
+
+            if self.run.status == "completed":
+                logging.info(f"Run completed.")
+                return self.completed()
+            elif self.run.status == "requires_action":
+                logging.info(f"Run requires action.")
+                self.requires_action()
+            elif self.run.status == "cancelled":
+                raise Exception(f"Run was cancelled: {self.run.status}")
+            elif self.run.status == "expired":
+                raise Exception(f"Run expired: {self.run.status}")
+            elif self.run.status == "failed":
+                raise ValueError(
+                    f"Run failed with status: {self.run.status}, last_error: {self.run.last_error}"
+                )
+            elif self.run.status in ["in_progress", "queued"]:
+                time.sleep(0.25)
+            else:
+                raise ValueError(f"Unknown run status: {self.run.status}")
+
+    @trace
+    def _process_assistant_message(self, message):
+        for entry in message.content:
+            if entry.type == "text":
+                self.session.send(
+                    TextResponse(role=message.role, content=entry.text.value)
+                )
+            elif entry.type == "image_file":
+                file_id = entry.image_file.file_id
+                self.session.send(
+                    ImageResponse(
+                        content=base64.b64encode(
+                            self.client.files.content(file_id).read()
+                        ).decode("utf-8")
+                    )
+                )
+            else:
+                logging.critical("Unknown content type: {}".format(entry.type))
+
+    @trace
+    def completed(self):
+        """What to do when run.status == 'completed'"""
+        self.session.close()
+
+    @trace
+    def requires_action(self):
+        """What to do when run.status == 'requires_action'"""
+        # if the run requires us to run a tool
+        tool_call_outputs = []
+
+        for tool_call in self.run.required_action.submit_tool_outputs.tool_calls:
+            self.session.send(
+                ExtensionCallMessage(
+                    name=tool_call.function.name, args=tool_call.function.arguments
+                )
+            )
+            if tool_call.type == "function":
+                # let's keep sync for now
+                logging.info(
+                    f"Calling tool: {tool_call.function.name} with args: {tool_call.function.arguments}"
+                )
+                tool_call_output = self.extensions.get_extension(
+                    tool_call.function.name
+                ).invoke(tool_call.function.arguments)
+                self.session.send(
+                    ExtensionReturnMessage(
+                        name=tool_call.function.name, content=tool_call_output
+                    )
+                )
+                tool_call_outputs.append(
+                    {
+                        "tool_call_id": tool_call.id,
+                        "output": json.dumps(tool_call_output),
+                    }
+                )
+            else:
+                raise ValueError(f"Unsupported tool call type: {tool_call.type}")
+
+        if tool_call_outputs:
+            logging.info(f"Submitting tool outputs: {tool_call_outputs}")
+            _ = trace(self.client.beta.threads.runs.submit_tool_outputs)(
+                thread_id=self.thread.id,
+                run_id=self.run.id,
+                tool_outputs=tool_call_outputs,
+            )
