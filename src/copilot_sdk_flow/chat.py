@@ -1,5 +1,6 @@
 """This script contains the main chat completion function used as
 an entry point for our demo."""
+
 import os
 from promptflow.tracing import trace
 
@@ -38,11 +39,14 @@ def chat_completion(
 
     if "session_id" not in context:
         session = session_manager.create_session()
+        context["session_id"] = session.id
+        # record all messages so far
+        for message in messages:
+            session.record_message(message)
     else:
         session = session_manager.get_session(context.get("session_id"))
-
-    # record the user message into the session
-    session.record_message(messages[0])
+        # record the user message into the session
+        session.record_message(messages[-1])
 
     # the extension manager is responsible for loading and invoking extensions
     extensions = ExtensionsManager(config)

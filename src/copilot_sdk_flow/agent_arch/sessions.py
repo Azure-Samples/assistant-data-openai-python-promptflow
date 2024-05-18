@@ -125,10 +125,8 @@ class SessionManager:
             )
             return None
 
-        self.sessions[thread.id] = Session(
-            assistant_id=thread.assistant_id,
-            thread_id=thread.id,
-        )
+        self.sessions[session_id] = Session(thread=thread, client=self.aoai_client)
+
         return self.sessions[thread.id]
 
     def set_session(self, session_id, session: Session):
