@@ -23,3 +23,8 @@ class FileResponse(BaseModel):
 
 class ImageResponse(BaseModel):
     content: str
+
+
+class StepNotification(BaseModel):
+    type: str
+    content: str

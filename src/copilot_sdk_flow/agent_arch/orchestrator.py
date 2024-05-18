@@ -12,6 +12,7 @@ from agent_arch.messages import (
     ImageResponse,
     ExtensionCallMessage,
     ExtensionReturnMessage,
+    StepNotification,
 )
 
 
@@ -34,8 +35,7 @@ class Orchestrator:
         logging.info(f"Orchestrator initialized with session_id: {session.id}")
 
         self.run = None
-        self.step_logging_cursor = None
-        self.messages_during_loop = []
+        self.last_step_id = None
         self.last_message_id = None
 
     @trace
@@ -47,10 +47,6 @@ class Orchestrator:
         logging.info(f"Pre loop run status: {self.run.status}")
 
         start_time = time.time()
-        self.step_logging_cursor = None
-
-        # keep track of messages happening during the loop
-        self.messages_during_loop = []
 
         # loop until max_waiting_time is reached
         while (time.time() - start_time) < self.config.ORCHESTRATOR_MAX_WAITING_TIME:
@@ -62,6 +58,17 @@ class Orchestrator:
                 f"Run status: {self.run.status} (time={int(time.time() - start_time)}s, max_waiting_time={self.config.ORCHESTRATOR_MAX_WAITING_TIME})"
             )
 
+            # check if a step has been completed
+            run_steps = self.client.beta.threads.runs.steps.list(
+                thread_id=self.thread.id, run_id=self.run.id, after=self.last_step_id
+            )
+            for step in run_steps:
+                logging.info(
+                    "The assistant has moved forward to step {}".format(step.id)
+                )
+                self.process_step(step)
+                self.last_step_id = step.id
+
             # check if there are messages
             for message in self.client.beta.threads.messages.list(
                 thread_id=self.thread.id, order="asc", after=self.last_message_id
@@ -69,7 +76,7 @@ class Orchestrator:
                 message = self.client.beta.threads.messages.retrieve(
                     thread_id=self.thread.id, message_id=message.id
                 )
-                self._process_assistant_message(message)
+                self.process_message(message)
                 # self.session.send(message)
                 self.last_message_id = message.id
 
@@ -93,7 +100,7 @@ class Orchestrator:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
     @trace
-    def _process_assistant_message(self, message):
+    def process_message(self, message):
         for entry in message.content:
             if entry.type == "text":
                 self.session.send(
@@ -110,6 +117,24 @@ class Orchestrator:
                 )
             else:
                 logging.critical("Unknown content type: {}".format(entry.type))
+
+    @trace
+    def process_step(self, step):
+        """Process a step from the run"""
+        if step.type == "tool_calls":
+            for tool_call in step.step_details.tool_calls:
+                if tool_call.type == "code":
+                    self.session.send(
+                        StepNotification(type=step.type, content=tool_call.model_dump())
+                    )
+                elif tool_call.type == "function":
+                    self.session.send(
+                        StepNotification(type=step.type, content=tool_call.model_dump())
+                    )
+                else:
+                    logging.error(f"Unsupported tool call type: {tool_call.type}")
+        else:
+            logging.error(f"Unsupported step type: {step.type}")
 
     @trace
     def completed(self):
@@ -152,7 +177,7 @@ class Orchestrator:
 
         if tool_call_outputs:
             logging.info(f"Submitting tool outputs: {tool_call_outputs}")
-            _ = trace(self.client.beta.threads.runs.submit_tool_outputs)(
+            _ = self.client.beta.threads.runs.submit_tool_outputs(
                 thread_id=self.thread.id,
                 run_id=self.run.id,
                 tool_outputs=tool_call_outputs,
