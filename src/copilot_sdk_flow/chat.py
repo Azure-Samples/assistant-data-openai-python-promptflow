@@ -36,7 +36,10 @@ def chat_completion(
     # with overrides from the context
     config = Configuration.from_env_and_context(context)
 
+    # get the Azure OpenAI client
     aoai_client = get_azure_openai_client(stream=False)  # TODO: Assistants Streaming
+
+    # the session manager is responsible for creating and storing sessions
     session_manager = SessionManager(aoai_client)
 
     if "session_id" not in context:
@@ -44,52 +47,20 @@ def chat_completion(
     else:
         session = session_manager.get_session(context.get("session_id"))
 
+    # record the user message into the session
     session.record_message(messages[0])
+
+    # the extension manager is responsible for loading and invoking extensions
     extensions = ExtensionsManager(config)
     extensions.load()
 
+    # the orchestrator is responsible for managing the assistant run
     orchestrator = Orchestrator(config, aoai_client, session, extensions)
     orchestrator.run_loop()
 
-    def milk_that_queue():
+    # for now we'll use this trick for outputs
+    def output_queue_iterate():
         while session.output_queue:
             yield session.output_queue.popleft()
 
-    return {"reply": milk_that_queue(), "context": context}
-
-
-if __name__ == "__main__":
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    # test the chat completion function
-    from promptflow.tracing import start_trace
-
-    start_trace()
-
-    import asyncio
-
-    # enable logging with good formatting
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    # disable logging for azure.core
-    logging.getLogger("azure.core").setLevel(logging.WARNING)
-    logging.getLogger("azure.identity").setLevel(logging.WARNING)
-    logging.getLogger("httpcore").setLevel(logging.WARNING)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-
-    reply = chat_completion([{"role": "user", "content": "plot avg sales per month"}])[
-        "reply"
-    ]
-
-    # logging.info("Returned length: %s", len(output_queue))
-
-    for message in reply:
-        print(message)
-    # while output_queue:
-    #     print(output_queue.popleft())
-    # for message in iter(output_queue.get, None):
-    #     print(message)
+    return {"reply": output_queue_iterate(), "context": context}
