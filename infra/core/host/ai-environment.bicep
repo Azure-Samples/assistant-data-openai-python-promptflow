@@ -50,6 +50,8 @@ module hub '../ai/hub.bicep' = {
     tags: tags
     name: hubName
     displayName: hubName
+    uaiName: uaiName
+    uaiResourceId: hubDependencies.outputs.uaiResourceId
     keyVaultId: hubDependencies.outputs.keyVaultId
     storageAccountId: hubDependencies.outputs.storageAccountId
     containerRegistryId: hubDependencies.outputs.containerRegistryId
@@ -65,7 +67,7 @@ module project '../ai/project.bicep' = {
     location: location
     tags: tags
     name: projectName
-    uaiResourceId: hubDependencies.outputs.uaiResourceId
+    //uaiResourceId: hubDependencies.outputs.uaiResourceId
     displayName: projectName
     hubName: hub.outputs.name
   }

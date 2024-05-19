@@ -2,6 +2,9 @@
 param name string
 @description('The display name of the AI Studio Hub Resource')
 param displayName string = name
+@description('The UAI resource ID to use for the AI Studio Hub Resource')
+param uaiName string
+param uaiResourceId string
 @description('The storage account ID to use for the AI Studio Hub Resource')
 param storageAccountId string
 @description('The key vault ID to use for the AI Studio Hub Resource')
@@ -26,6 +29,12 @@ param publicNetworkAccess string = 'Enabled'
 param location string = resourceGroup().location
 param tags object = {}
 
+resource uai 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+  name: uaiName
+}
+
+var userAssignedIdentities = {'/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/${uai.name}': {}}
+
 resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
   name: name
   location: location
@@ -36,7 +45,8 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
   }
   kind: 'Hub'
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: userAssignedIdentities
   }
   properties: {
     friendlyName: displayName

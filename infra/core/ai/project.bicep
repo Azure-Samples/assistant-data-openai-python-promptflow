@@ -4,8 +4,6 @@ param name string
 param displayName string = name
 @description('The name of the AI Studio Hub Resource where this project should be created')
 param hubName string
-@description('The UAI resource ID to use for the AI Studio Hub Resource')
-param uaiResourceId string
 @description('The SKU name to use for the AI Studio Hub Resource')
 param skuName string = 'Basic'
 @description('The SKU tier to use for the AI Studio Hub Resource')
@@ -28,10 +26,7 @@ resource project 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
   }
   kind: 'Project'
   identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${uaiResourceId}': {}
-    }
+    type: 'SystemAssigned'
   }
   properties: {
     friendlyName: displayName
