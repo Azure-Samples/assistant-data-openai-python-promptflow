@@ -27,7 +27,7 @@ class Orchestrator:
         logging.info(
             f"Retrieving assistant with id: {config.AZURE_OPENAI_ASSISTANT_ID}"
         )
-        self.assistant = self.client.beta.assistants.retrieve(
+        self.assistant = trace(self.client.beta.assistants.retrieve)(
             self.config.AZURE_OPENAI_ASSISTANT_ID
         )
         self.thread = self.session.thread
@@ -41,7 +41,7 @@ class Orchestrator:
     @trace
     def run_loop(self):
         logging.info(f"Creating the run")
-        self.run = self.client.beta.threads.runs.create(
+        self.run = trace(self.client.beta.threads.runs.create)(
             thread_id=self.thread.id, assistant_id=self.assistant.id
         )
         logging.info(f"Pre loop run status: {self.run.status}")
@@ -70,15 +70,7 @@ class Orchestrator:
                 self.last_step_id = step.id
 
             # check if there are messages
-            for message in self.client.beta.threads.messages.list(
-                thread_id=self.thread.id, order="asc", after=self.last_message_id
-            ):
-                message = self.client.beta.threads.messages.retrieve(
-                    thread_id=self.thread.id, message_id=message.id
-                )
-                self.process_message(message)
-                # self.session.send(message)
-                self.last_message_id = message.id
+            self._check_messages()
 
             if self.run.status == "completed":
                 logging.info(f"Run completed.")
@@ -100,7 +92,20 @@ class Orchestrator:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
     @trace
-    def process_message(self, message):
+    def _check_messages(self):
+        # check if there are messages
+        for message in self.client.beta.threads.messages.list(
+            thread_id=self.thread.id, order="asc", after=self.last_message_id
+        ):
+            message = trace(self.client.beta.threads.messages.retrieve)(
+                thread_id=self.thread.id, message_id=message.id
+            )
+            self._process_message(message)
+            # self.session.send(message)
+            self.last_message_id = message.id
+
+    @trace
+    def _process_message(self, message):
         for entry in message.content:
             if message.role == "user":
                 # this means a message we just added
@@ -142,6 +147,7 @@ class Orchestrator:
     @trace
     def completed(self):
         """What to do when run.status == 'completed'"""
+        self._check_messages()
         self.session.close()
 
     @trace
@@ -194,7 +200,7 @@ class Orchestrator:
 
         if tool_call_outputs:
             logging.info(f"Submitting tool outputs: {tool_call_outputs}")
-            _ = self.client.beta.threads.runs.submit_tool_outputs(
+            _ = trace(self.client.beta.threads.runs.submit_tool_outputs)(
                 thread_id=self.thread.id,
                 run_id=self.run.id,
                 tool_outputs=tool_call_outputs,
