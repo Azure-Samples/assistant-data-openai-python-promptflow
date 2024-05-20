@@ -5,10 +5,10 @@
 openai==1.13.3
 
 # promptflow packages
-promptflow[azure]==1.10.1
-promptflow-tracing==1.10.1
+promptflow[azure]==1.11.0
+promptflow-tracing==1.11.0
 promptflow-tools==1.4.0
-promptflow-evals==0.2.0.dev0
+promptflow-evals==0.3.0
 
 # azure dependencies
 azure-core==1.30.1
