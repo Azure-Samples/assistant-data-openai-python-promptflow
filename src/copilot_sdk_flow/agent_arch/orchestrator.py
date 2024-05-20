@@ -59,15 +59,7 @@ class Orchestrator:
             )
 
             # check if a step has been completed
-            run_steps = self.client.beta.threads.runs.steps.list(
-                thread_id=self.thread.id, run_id=self.run.id, after=self.last_step_id
-            )
-            for step in run_steps:
-                logging.info(
-                    "The assistant has moved forward to step {}".format(step.id)
-                )
-                self.process_step(step)
-                self.last_step_id = step.id
+            self._check_steps()
 
             # check if there are messages
             self._check_messages()
@@ -123,7 +115,21 @@ class Orchestrator:
                 logging.critical("Unknown content type: {}".format(entry.type))
 
     @trace
-    def process_step(self, step):
+    def _check_steps(self):
+        """Check if there are new steps to process"""
+        run_steps = self.client.beta.threads.runs.steps.list(
+            thread_id=self.thread.id, run_id=self.run.id, after=self.last_step_id
+        )
+        for step in run_steps:
+            if step.status == "completed":
+                logging.info(
+                    "The assistant has moved forward to step {}".format(step.id)
+                )
+                self._process_completed_step(step)
+                self.last_step_id = step.id
+
+    @trace
+    def _process_completed_step(self, step):
         """Process a step from the run"""
         if step.type == "tool_calls":
             for tool_call in step.step_details.tool_calls:
@@ -147,6 +153,7 @@ class Orchestrator:
     @trace
     def completed(self):
         """What to do when run.status == 'completed'"""
+        self._check_steps()
         self._check_messages()
         self.session.close()
 

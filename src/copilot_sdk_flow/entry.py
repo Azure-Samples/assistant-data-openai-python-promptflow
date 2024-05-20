@@ -38,17 +38,24 @@ def flow_entry_copilot_assistants(
     context = json.loads(context) if context else {}
 
     # refactor the whole chat_history thing
-    conversation = [
-        {
-            "role": "user" if "inputs" in message else "assistant",
-            "content": (
-                message["inputs"]["chat_input"]
-                if "inputs" in message
-                else message["outputs"]["chat_output"]
-            ),
-        }
-        for message in chat_history
-    ]
+    conversation = []
+    for message in chat_history:
+        if "inputs" in message:
+            conversation.append(
+                {
+                    "role": "user",
+                    "content": message["inputs"]["chat_input"],
+                }
+            )
+        elif "outputs" in message:
+            conversation.append(
+                {
+                    "role": "assistant",
+                    "content": message["outputs"]["reply"],
+                }
+            )
+        else:
+            pass
 
     # add the user input as last message in the conversation
     conversation.append({"role": "user", "content": chat_input})
