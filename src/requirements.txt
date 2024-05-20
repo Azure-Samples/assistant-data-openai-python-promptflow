@@ -18,6 +18,9 @@ azure-mgmt-search==9.1.0
 azure-mgmt-cognitiveservices==13.5.0
 azure-ai-ml==1.16.0
 azure-storage-file-share>=12.10.0
+opencensus-ext-azure==1.1.13
+azureml-core==1.56.0
+azureml-mlflow==1.56.0
 
 # utilities
 omegaconf-argparse==1.0.1
