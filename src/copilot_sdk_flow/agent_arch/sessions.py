@@ -109,7 +109,7 @@ class SessionManager:
     @trace
     def create_session(self) -> Session:
         """Creates a new session."""
-        thread = self.aoai_client.beta.threads.create()
+        thread = trace(self.aoai_client.beta.threads.create)()
         return Session(thread=thread, client=self.aoai_client)
 
     @trace
@@ -119,7 +119,7 @@ class SessionManager:
             return self.sessions[session_id]
 
         try:
-            thread = self.aoai_client.beta.threads.retrieve(thread_id=session_id)
+            thread = trace(self.aoai_client.beta.threads.retrieve)(thread_id=session_id)
         except Exception as e:
             logging.critical(
                 f"Error retrieving thread {session_id}: {traceback.format_exc()}"

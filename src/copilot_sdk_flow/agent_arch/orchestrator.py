@@ -86,7 +86,7 @@ class Orchestrator:
             else:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
-    @trace
+    # @trace
     def _check_messages(self, skip=False):
         # check if there are messages
         for message in self.client.beta.threads.messages.list(
@@ -118,7 +118,7 @@ class Orchestrator:
             else:
                 logging.critical("Unknown content type: {}".format(entry.type))
 
-    @trace
+    # @trace
     def _check_steps(self):
         """Check if there are new steps to process"""
         run_steps = self.client.beta.threads.runs.steps.list(
