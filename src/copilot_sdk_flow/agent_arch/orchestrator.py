@@ -40,6 +40,9 @@ class Orchestrator:
 
     @trace
     def run_loop(self):
+        # purge previous messages before run started
+        self._check_messages(skip=True)
+
         logging.info(f"Creating the run")
         self.run = trace(self.client.beta.threads.runs.create)(
             thread_id=self.thread.id, assistant_id=self.assistant.id
@@ -84,15 +87,16 @@ class Orchestrator:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
     @trace
-    def _check_messages(self):
+    def _check_messages(self, skip=False):
         # check if there are messages
         for message in self.client.beta.threads.messages.list(
             thread_id=self.thread.id, order="asc", after=self.last_message_id
         ):
-            message = trace(self.client.beta.threads.messages.retrieve)(
-                thread_id=self.thread.id, message_id=message.id
-            )
-            self._process_message(message)
+            if not skip:
+                message = trace(self.client.beta.threads.messages.retrieve)(
+                    thread_id=self.thread.id, message_id=message.id
+                )
+                self._process_message(message)
             # self.session.send(message)
             self.last_message_id = message.id
 
