@@ -61,4 +61,7 @@ def chat_completion(
         while session.output_queue:
             yield session.output_queue.popleft()
 
-    return {"reply": output_queue_iterate(), "context": context}
+    if stream:
+        return {"reply": output_queue_iterate(), "context": context}
+    else:
+        return {"reply": "".join(list(output_queue_iterate())), "context": context}

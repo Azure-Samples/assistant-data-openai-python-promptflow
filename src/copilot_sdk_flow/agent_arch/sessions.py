@@ -88,6 +88,7 @@ class Session:
             )
             self.output_queue.append(output_message)
 
+    @trace
     def close(self):
         """Closes the session."""
         self.open = False
@@ -118,7 +119,7 @@ class SessionManager:
             return self.sessions[session_id]
 
         try:
-            thread = self.aoai_client.beta.threads.retrieve(session_id)
+            thread = self.aoai_client.beta.threads.retrieve(thread_id=session_id)
         except Exception as e:
             logging.critical(
                 f"Error retrieving thread {session_id}: {traceback.format_exc()}"
