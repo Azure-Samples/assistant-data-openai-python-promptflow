@@ -135,6 +135,7 @@ def run_evaluation(
         evaluators=evaluators,
         evaluator_config=evaluators_config,
         data=evaluation_data_path,
+        output_path=output_path,
     )
 
     tabular_result = pd.DataFrame(result.get("rows"))
@@ -185,6 +186,12 @@ def main():
         ],
         required=True,
     )
+    parser.add_argument(
+        "--output-data",
+        type=str,
+        required=False,
+        help="Path to output data file (metrics and tabular result)",
+    )
     args = parser.parse_args()
 
     # set logging
@@ -211,6 +218,7 @@ def main():
         evaluation_model_config=eval_model_config,
         evaluation_data_path=args.evaluation_data_path,
         metrics=args.metrics,
+        output_path=args.output_data,
     )
 
     print("-----Summarized Metrics-----")
