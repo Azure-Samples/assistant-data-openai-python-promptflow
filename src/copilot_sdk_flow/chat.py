@@ -65,3 +65,21 @@ def chat_completion(
         return {"reply": output_queue_iterate(), "context": context}
     else:
         return {"reply": "".join(list(output_queue_iterate())), "context": context}
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+    import logging
+    
+    logging.basicConfig(level=logging.INFO)
+    # remove azure.core logging
+    logging.getLogger("azure.core").setLevel(logging.ERROR)
+    logging.getLogger("azure.identity").setLevel(logging.ERROR)
+    logging.getLogger("httpx").setLevel(logging.ERROR)
+    
+    # sample usage
+    messages = [
+        {"role": "user", "content": "avg sales in jan"},
+    ]
+    result = chat_completion(messages, stream=False)
+    print(result["reply"])
