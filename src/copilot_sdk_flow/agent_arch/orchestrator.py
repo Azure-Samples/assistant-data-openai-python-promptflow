@@ -14,14 +14,18 @@ from agent_arch.messages import (
     ExtensionReturnMessage,
     StepNotification,
 )
+from agent_arch.event_log import EventLogger
 
 
 class Orchestrator:
-    def __init__(self, config: Configuration, client, session, extensions):
+    def __init__(
+        self, config: Configuration, client, session, extensions, event_logger
+    ):
         self.client = client
         self.config = config
         self.session = session
         self.extensions = extensions
+        self.event_logger = event_logger
 
         # getting the Assistant API specific constructs
         logging.info(
@@ -52,6 +56,8 @@ class Orchestrator:
         start_time = time.time()
 
         # loop until max_waiting_time is reached
+        self.event_logger.end_span(EventLogger.TIME_TO_RUN_LOOP)
+        self.event_logger.start_span(EventLogger.TIME_TO_COMPLETE_RUN_LOOP)
         while (time.time() - start_time) < self.config.ORCHESTRATOR_MAX_WAITING_TIME:
             # checks the run regularly
             self.run = self.client.beta.threads.runs.retrieve(
@@ -62,15 +68,17 @@ class Orchestrator:
             )
 
             # check if a step has been completed
-            self._check_steps()
+            # self._check_steps()
 
             # check if there are messages
             self._check_messages()
 
             if self.run.status == "completed":
                 logging.info(f"Run completed.")
+                self.event_logger.end_span(EventLogger.TIME_TO_COMPLETE_RUN_LOOP)
                 return self.completed()
             elif self.run.status == "requires_action":
+                self.event_logger.end_span(EventLogger.TIME_TO_FIRST_EXTENSION_CALL)
                 logging.info(f"Run requires action.")
                 self.requires_action()
             elif self.run.status == "cancelled":

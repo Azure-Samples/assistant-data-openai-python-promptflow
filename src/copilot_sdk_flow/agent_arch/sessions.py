@@ -110,7 +110,8 @@ class SessionManager:
     def create_session(self) -> Session:
         """Creates a new session."""
         thread = trace(self.aoai_client.beta.threads.create)()
-        return Session(thread=thread, client=self.aoai_client)
+        self.sessions[thread.id] = Session(thread=thread, client=self.aoai_client)
+        return self.sessions[thread.id]
 
     @trace
     def get_session(self, session_id: str) -> Union[Session, None]:

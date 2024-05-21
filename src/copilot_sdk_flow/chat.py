@@ -15,6 +15,7 @@ from agent_arch.config import Configuration
 from agent_arch.sessions import SessionManager
 from agent_arch.orchestrator import Orchestrator
 from agent_arch.extensions.manager import ExtensionsManager
+from agent_arch.event_log import EventLogger
 
 
 @trace
@@ -23,6 +24,11 @@ def chat_completion(
     stream: bool = False,
     context: dict[str, any] = {},
 ):
+    event_logger = EventLogger()
+    event_logger.start_span(EventLogger.TIME_TO_FIRST_TOKEN)
+    event_logger.start_span(EventLogger.TIME_TO_FIRST_EXTENSION_CALL)
+    event_logger.start_span(EventLogger.TIME_TO_RUN_LOOP)
+
     # a couple basic checks
     if not messages:
         return {"error": "No messages provided."}
@@ -53,33 +59,50 @@ def chat_completion(
     extensions.load()
 
     # the orchestrator is responsible for managing the assistant run
-    orchestrator = Orchestrator(config, aoai_client, session, extensions)
+    orchestrator = Orchestrator(config, aoai_client, session, extensions, event_logger)
     orchestrator.run_loop()
 
     # for now we'll use this trick for outputs
     def output_queue_iterate():
         while session.output_queue:
             yield session.output_queue.popleft()
+            event_logger.end_span(EventLogger.TIME_TO_FIRST_TOKEN)
+
+    chat_completion_output = {
+        "context": context,
+    }
+    if context.get("return_spans", False):
+        chat_completion_output["context"]["spans"] = event_logger.report()
 
     if stream:
-        return {"reply": output_queue_iterate(), "context": context}
+        chat_completion_output["reply"] = output_queue_iterate()
     else:
-        return {"reply": "".join(list(output_queue_iterate())), "context": context}
+        chat_completion_output["reply"] = "".join(list(output_queue_iterate()))
+
+    return chat_completion_output
+
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
+
     load_dotenv()
+
+    from promptflow.tracing import start_trace
+
+    start_trace()
+
     import logging
-    
+    import json
+
     logging.basicConfig(level=logging.INFO)
     # remove azure.core logging
     logging.getLogger("azure.core").setLevel(logging.ERROR)
     logging.getLogger("azure.identity").setLevel(logging.ERROR)
     logging.getLogger("httpx").setLevel(logging.ERROR)
-    
+
     # sample usage
     messages = [
         {"role": "user", "content": "avg sales in jan"},
     ]
-    result = chat_completion(messages, stream=False)
-    print(result["reply"])
+    result = chat_completion(messages, stream=False, context={"return_spans": True})
+    print(json.dumps(result, indent=2))
