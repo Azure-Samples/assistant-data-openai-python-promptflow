@@ -50,11 +50,11 @@ class Configuration(BaseModel):
             MAX_COMPLETION_TOKENS=int(
                 context.get("MAX_COMPLETION_TOKENS")
                 or os.getenv("MAX_COMPLETION_TOKENS")
-                or "1024"
+                or "2000"
             ),
             MAX_PROMPT_TOKENS=int(
                 context.get("MAX_PROMPT_TOKENS")
                 or os.getenv("MAX_PROMPT_TOKENS")
-                or "2048"
+                or "2000"
             ),
         )
