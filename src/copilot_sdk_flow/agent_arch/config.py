@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Optional
 from typing import Dict
 from pydantic import BaseModel
+from distutils.util import strtobool
 
 
 class Configuration(BaseModel):
@@ -11,6 +12,7 @@ class Configuration(BaseModel):
     ORCHESTRATOR_MAX_WAITING_TIME: int = 60
     AZURE_OPENAI_API_KEY: Optional[str] = None
     AZURE_OPENAI_API_VERSION: Optional[str] = "2024-05-01-preview"
+    COMPLETION_INSERT_NOTIFICATIONS: Optional[bool] = False
 
     @classmethod
     def from_env_and_context(cls, context: Dict[str, str]):
@@ -39,5 +41,8 @@ class Configuration(BaseModel):
             AZURE_OPENAI_API_KEY=os.getenv("AZURE_OPENAI_API_KEY"),
             AZURE_OPENAI_API_VERSION=os.getenv(
                 "AZURE_OPENAI_API_VERSION", "2024-05-01-preview"
+            ),
+            COMPLETION_INSERT_NOTIFICATIONS=strtobool(
+                os.getenv("COMPLETION_INSERT_NOTIFICATIONS", "False")
             ),
         )

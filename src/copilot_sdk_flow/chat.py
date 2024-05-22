@@ -45,7 +45,7 @@ def chat_completion(
     )  # TODO: Assistants Streaming
 
     # the session manager is responsible for creating and storing sessions
-    session_manager = SessionManager(aoai_client)
+    session_manager = SessionManager(aoai_client, config)
 
     if "session_id" not in context:
         session = session_manager.create_session()

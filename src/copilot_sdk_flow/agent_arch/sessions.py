@@ -14,21 +14,24 @@ from agent_arch.messages import (
     TextResponse,
     ImageResponse,
 )
+from agent_arch.config import Configuration
 
 
 class Session:
     """Represents a session with the assistant."""
 
-    def __init__(self, thread: Thread, client: AzureOpenAI):
+    def __init__(self, thread: Thread, client: AzureOpenAI, config: Configuration):
         """Initializes a new session with the assistant.
 
         Args:
             thread (Thread): The thread associated with the session.
             client (AzureOpenAI): The AzureOpenAI client.
+            config (Configuration): The configuration.
         """
         self.id = thread.id
         self.thread = thread
         self.client = client
+        self.config = config
         self.output_queue = deque()
         self.open = True
 
@@ -64,15 +67,26 @@ class Session:
         Args:
             message (Any): The message to send.
         """
-        if isinstance(message, ExtensionCallMessage):
+        output_message = None  # if nothing works, we do not output anything
+
+        if (
+            isinstance(message, ExtensionCallMessage)
+            and self.config.COMPLETION_INSERT_NOTIFICATIONS
+        ):
             if message.name == "query_order_data":
                 output_message = f"_Calling extension `{message.name}` with SQL query:_\n```sql\n{message.args['sql_query']}\n```\n\n"
             else:
                 output_message = f"_Calling extension `{message.name}`_\n\n"
-        elif isinstance(message, ExtensionReturnMessage):
+        elif (
+            isinstance(message, ExtensionReturnMessage)
+            and self.config.COMPLETION_INSERT_NOTIFICATIONS
+        ):
             # output_message = f"_Extension `{message.name}` returned: `{message.content}`_\n\n"
             output_message = None
-        elif isinstance(message, StepNotification):
+        elif (
+            isinstance(message, StepNotification)
+            and self.config.COMPLETION_INSERT_NOTIFICATIONS
+        ):
             if message.type == "code_interpreter":
                 output_message = f"_Called extension `code_interpreter` with code:\n```python\n{message.content.code_interpreter.input}```_\n"
             else:
@@ -82,9 +96,7 @@ class Session:
             output_message = message.content
         elif isinstance(message, ImageResponse):
             output_message = "![image](" + message.content + ")\n\n"
-        else:
-            logging.critical(f"Unknown message type: {type(message)}")
-            output_message = f"`Unknown message type: {type(message)}`\n\n"
+
         if output_message:
             logging.info(
                 f"Queueing message type={message.__class__.__name__} len={len(output_message)}"
@@ -100,20 +112,23 @@ class Session:
 class SessionManager:
     """Manages assistant sessions."""
 
-    def __init__(self, aoai_client: AzureOpenAI):
+    def __init__(self, aoai_client: AzureOpenAI, config: Configuration):
         """Initializes a new session manager.
 
         Args:
             aoai_client (AzureOpenAI): The AzureOpenAI client.
         """
         self.aoai_client = aoai_client
+        self.config = config
         self.sessions = {}
 
     @trace
     def create_session(self) -> Session:
         """Creates a new session."""
         thread = trace(self.aoai_client.beta.threads.create)()
-        self.sessions[thread.id] = Session(thread=thread, client=self.aoai_client)
+        self.sessions[thread.id] = Session(
+            thread=thread, client=self.aoai_client, config=self.config
+        )
         return self.sessions[thread.id]
 
     @trace
@@ -130,7 +145,9 @@ class SessionManager:
             )
             return None
 
-        self.sessions[session_id] = Session(thread=thread, client=self.aoai_client)
+        self.sessions[session_id] = Session(
+            thread=thread, client=self.aoai_client, config=self.config
+        )
 
         return self.sessions[thread.id]
 
