@@ -131,7 +131,9 @@ def run_evaluation(
                 "ground_truth": "${data.ground_truth}",
             }
         elif metric_name == "safety":
-            evaluators[metric_name] = ContentSafetyEvaluator(get_project_scope())
+            evaluators[metric_name] = ContentSafetyEvaluator(
+                project_scope=get_project_scope()
+            )
             evaluators_config[metric_name] = {
                 "question": "${data.chat_input}",
                 "answer": "${target.reply}",
