@@ -82,6 +82,8 @@ def chat_completion(
         chat_completion_output["reply"] = output_queue_iterate()
     else:
         chat_completion_output["reply"] = "".join(list(output_queue_iterate()))
+        if chat_completion_output["reply"] == "":
+            chat_completion_output["reply"] = "No reply from the assistant."
 
     return chat_completion_output
 
