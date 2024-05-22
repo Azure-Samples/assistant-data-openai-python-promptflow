@@ -73,8 +73,11 @@ class Session:
             # output_message = f"_Extension `{message.name}` returned: `{message.content}`_\n\n"
             output_message = None
         elif isinstance(message, StepNotification):
+            if message.type == "code_interpreter":
+                output_message = f"_Called extension `code_interpreter` with code:\n```python\n{message.content.code_interpreter.input}```_\n"
+            else:
+                output_message = None
             # output_message = f"_Agent moved forward with step: `{message.type}`: `{message.content}`_\n"
-            output_message = None
         elif isinstance(message, TextResponse):
             output_message = message.content
         elif isinstance(message, ImageResponse):

@@ -87,9 +87,8 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    from promptflow.tracing import start_trace
-
-    start_trace()
+    # from promptflow.tracing import start_trace
+    # start_trace()
 
     import logging
     import json
@@ -102,7 +101,7 @@ if __name__ == "__main__":
 
     # sample usage
     messages = [
-        {"role": "user", "content": "avg sales in jan"},
+        {"role": "user", "content": "plot avg monthly sales"},
     ]
     result = chat_completion(messages, stream=False, context={"return_spans": True})
     print(json.dumps(result, indent=2))

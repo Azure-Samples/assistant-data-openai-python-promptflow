@@ -145,18 +145,16 @@ class Orchestrator:
         """Process a step from the run"""
         if step.type == "tool_calls":
             for tool_call in step.step_details.tool_calls:
-                if tool_call.type == "code":
+                if tool_call.type == "code_interpreter":
                     self.session.send(
                         StepNotification(
-                            type=step.type, content=str(tool_call.model_dump())
+                            type=tool_call.type, content=tool_call)
                         )
-                    )
                 elif tool_call.type == "function":
                     self.session.send(
                         StepNotification(
-                            type=step.type, content=str(tool_call.model_dump())
+                            type=tool_call.type, content=tool_call)
                         )
-                    )
                 else:
                     logging.error(f"Unsupported tool call type: {tool_call.type}")
         else:
@@ -165,7 +163,7 @@ class Orchestrator:
     @trace
     def completed(self):
         """What to do when run.status == 'completed'"""
-        self._check_steps()
+        # self._check_steps()
         self._check_messages()
         self.session.close()
 

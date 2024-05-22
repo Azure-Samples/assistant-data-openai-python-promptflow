@@ -28,5 +28,5 @@ class EventLogger:
 
     def report(self):
         return {
-            name: span.to_json() for name, span in self.completed_spans.items()
+            name: span.to_json() for name, span in self.completed_spans.items() if span.is_recording()
         }
