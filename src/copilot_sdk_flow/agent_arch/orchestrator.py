@@ -147,14 +147,12 @@ class Orchestrator:
             for tool_call in step.step_details.tool_calls:
                 if tool_call.type == "code_interpreter":
                     self.session.send(
-                        StepNotification(
-                            type=tool_call.type, content=tool_call)
-                        )
+                        StepNotification(type=tool_call.type, content=tool_call)
+                    )
                 elif tool_call.type == "function":
                     self.session.send(
-                        StepNotification(
-                            type=tool_call.type, content=tool_call)
-                        )
+                        StepNotification(type=tool_call.type, content=tool_call)
+                    )
                 else:
                     logging.error(f"Unsupported tool call type: {tool_call.type}")
         else:

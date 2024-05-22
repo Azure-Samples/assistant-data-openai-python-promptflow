@@ -38,7 +38,11 @@ def chat_completion(
     config = Configuration.from_env_and_context(context)
 
     # get the Azure OpenAI client
-    aoai_client = get_azure_openai_client(stream=False)  # TODO: Assistants Streaming
+    aoai_client = get_azure_openai_client(
+        stream=False,
+        azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
+        api_version=config.AZURE_OPENAI_API_VERSION,
+    )  # TODO: Assistants Streaming
 
     # the session manager is responsible for creating and storing sessions
     session_manager = SessionManager(aoai_client)

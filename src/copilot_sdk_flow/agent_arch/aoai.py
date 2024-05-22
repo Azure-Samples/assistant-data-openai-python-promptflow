@@ -17,6 +17,7 @@ def get_azure_openai_client(
         azure_endpoint is not None or "AZURE_OPENAI_ENDPOINT" in os.environ
     ), "azure_endpoint is None, AZURE_OPENAI_ENDPOINT environment variable is required"
 
+    logging.info(f"Using Azure OpenAI API version: {api_version}")
     # create an AzureOpenAI client using AAD or key based auth
     if "AZURE_OPENAI_API_KEY" in os.environ:
         logging.warning(
@@ -25,8 +26,7 @@ def get_azure_openai_client(
         aoai_client = AzureOpenAI(
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             api_key=os.environ["AZURE_OPENAI_API_KEY"],
-            api_version=api_version
-            or os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
+            api_version=api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
         )
     else:
         logging.info("Using Azure AD authentification [recommended]")
@@ -36,8 +36,7 @@ def get_azure_openai_client(
         )
         aoai_client = AzureOpenAI(
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            api_version=api_version
-            or os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
+            api_version=api_version or os.getenv("AZURE_OPENAI_API_VERSION"),
             azure_ad_token_provider=token_provider,
         )
     return aoai_client

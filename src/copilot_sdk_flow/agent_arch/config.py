@@ -10,7 +10,7 @@ class Configuration(BaseModel):
     AZURE_OPENAI_ASSISTANT_ID: str
     ORCHESTRATOR_MAX_WAITING_TIME: int = 60
     AZURE_OPENAI_API_KEY: Optional[str] = None
-    AZURE_OPENAI_API_VERSION: Optional[str] = "2024-02-15-preview"
+    AZURE_OPENAI_API_VERSION: Optional[str] = "2024-05-01-preview"
 
     @classmethod
     def from_env_and_context(cls, context: Dict[str, str]):
@@ -38,6 +38,6 @@ class Configuration(BaseModel):
             ),
             AZURE_OPENAI_API_KEY=os.getenv("AZURE_OPENAI_API_KEY"),
             AZURE_OPENAI_API_VERSION=os.getenv(
-                "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
+                "AZURE_OPENAI_API_VERSION", "2024-05-01-preview"
             ),
         )
