@@ -16,6 +16,7 @@ from agent_arch.sessions import SessionManager
 from agent_arch.orchestrator import Orchestrator
 from agent_arch.extensions.manager import ExtensionsManager
 from agent_arch.event_log import EventLogger
+from agent_arch.messages import TextResponse
 
 
 @trace
@@ -64,7 +65,10 @@ def chat_completion(
 
     # the orchestrator is responsible for managing the assistant run
     orchestrator = Orchestrator(config, aoai_client, session, extensions, event_logger)
-    orchestrator.run_loop()
+    try:
+        orchestrator.run_loop()
+    except Exception as e:
+        session.send(TextResponse(role="assistant", content=f"`Error: {e}`"))
 
     # for now we'll use this trick for outputs
     def output_queue_iterate():
@@ -103,11 +107,12 @@ if __name__ == "__main__":
     # remove azure.core logging
     logging.getLogger("azure.core").setLevel(logging.ERROR)
     logging.getLogger("azure.identity").setLevel(logging.ERROR)
-    logging.getLogger("httpx").setLevel(logging.ERROR)
+    # logging.getLogger("httpx").setLevel(logging.ERROR)
 
     # sample usage
     messages = [
-        {"role": "user", "content": "plot avg monthly sales"},
+        # {"role": "user", "content": "plot avg monthly sales"},
+        {"role": "user", "content": "avg sales in jan"},
     ]
     result = chat_completion(messages, stream=False, context={"return_spans": True})
     print(json.dumps(result, indent=2))

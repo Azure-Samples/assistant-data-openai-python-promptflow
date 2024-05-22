@@ -13,6 +13,8 @@ class Configuration(BaseModel):
     AZURE_OPENAI_API_KEY: Optional[str] = None
     AZURE_OPENAI_API_VERSION: Optional[str] = "2024-05-01-preview"
     COMPLETION_INSERT_NOTIFICATIONS: Optional[bool] = False
+    MAX_COMPLETION_TOKENS: Optional[int] = 1024
+    MAX_PROMPT_TOKENS: Optional[int] = 2048
 
     @classmethod
     def from_env_and_context(cls, context: Dict[str, str]):
@@ -44,5 +46,15 @@ class Configuration(BaseModel):
             ),
             COMPLETION_INSERT_NOTIFICATIONS=strtobool(
                 os.getenv("COMPLETION_INSERT_NOTIFICATIONS", "False")
+            ),
+            MAX_COMPLETION_TOKENS=int(
+                context.get("MAX_COMPLETION_TOKENS")
+                or os.getenv("MAX_COMPLETION_TOKENS")
+                or "1024"
+            ),
+            MAX_PROMPT_TOKENS=int(
+                context.get("MAX_PROMPT_TOKENS")
+                or os.getenv("MAX_PROMPT_TOKENS")
+                or "2048"
             ),
         )

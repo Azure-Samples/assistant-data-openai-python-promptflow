@@ -49,7 +49,10 @@ class Orchestrator:
 
         logging.info(f"Creating the run")
         self.run = trace(self.client.beta.threads.runs.create)(
-            thread_id=self.thread.id, assistant_id=self.assistant.id
+            thread_id=self.thread.id,
+            assistant_id=self.assistant.id,
+            max_completion_tokens=self.config.MAX_COMPLETION_TOKENS,
+            max_prompt_tokens=self.config.MAX_PROMPT_TOKENS,
         )
         logging.info(f"Pre loop run status: {self.run.status}")
 
@@ -92,7 +95,9 @@ class Orchestrator:
             elif self.run.status in ["in_progress", "queued"]:
                 time.sleep(0.25)
             elif self.run.status == "incomplete":
-                raise ValueError(f"Run incomplete: {self.run.status}, last_error: {self.run.last_error}")
+                raise ValueError(
+                    f"Run incomplete: {self.run.status}, last_error: {self.run.last_error}"
+                )
             else:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
@@ -112,6 +117,10 @@ class Orchestrator:
 
     @trace
     def _process_message(self, message):
+        if message.content is None:
+            raise Exception("Message content is None")
+        if len(message.content) == 0:
+            raise Exception("Message content is empty []")
         for entry in message.content:
             if message.role == "user":
                 # this means a message we just added
