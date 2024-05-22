@@ -130,7 +130,7 @@ def run_evaluation(
                 "context": "${target.context}",
                 "ground_truth": "${data.ground_truth}",
             }
-        elif metric_name == "safety":
+        elif metric_name == "content_safety":
             evaluators[metric_name] = ContentSafetyEvaluator(
                 project_scope=get_project_scope()
             )
@@ -200,7 +200,7 @@ def main():
             "similarity",
             "qa",
             "chat",
-            "safety",
+            "content_safety",
             "latency",
         ],
         required=True,

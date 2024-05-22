@@ -51,8 +51,8 @@ class Orchestrator:
         self.run = trace(self.client.beta.threads.runs.create)(
             thread_id=self.thread.id,
             assistant_id=self.assistant.id,
-            max_completion_tokens=self.config.MAX_COMPLETION_TOKENS,
-            max_prompt_tokens=self.config.MAX_PROMPT_TOKENS,
+            # max_completion_tokens=self.config.MAX_COMPLETION_TOKENS,
+            # max_prompt_tokens=self.config.MAX_PROMPT_TOKENS,
         )
         logging.info(f"Pre loop run status: {self.run.status}")
 

@@ -84,7 +84,7 @@ def main():
     logging.info(f"Creating assistant...")
     assistant = client.beta.assistants.create(
         name="Contoso Sales Assistant",
-        instructions="You are a helpful data analytics assistant helping user answer questions about the contoso sales data.",
+        instructions="You are a helpful data analytics assistant helping user answer questions about the contoso sales data. Any question not directly related to contoso saled data, you should decline to answer.",
         model=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
         tools=[
             {"type": "code_interpreter"},
