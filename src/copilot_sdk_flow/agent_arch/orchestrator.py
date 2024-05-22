@@ -91,6 +91,8 @@ class Orchestrator:
                 )
             elif self.run.status in ["in_progress", "queued"]:
                 time.sleep(0.25)
+            elif self.run.status == "incomplete":
+                raise ValueError(f"Run incomplete: {self.run.status}, last_error: {self.run.last_error}")
             else:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
