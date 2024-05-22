@@ -1,5 +1,5 @@
 from opentelemetry.trace import get_tracer
-
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 
 class EventLogger:
     TIME_TO_FIRST_TOKEN = "time_to_first_token"
@@ -28,5 +28,5 @@ class EventLogger:
 
     def report(self):
         return {
-            name: span.get_span_context() for name, span in self.completed_spans.items()
+            name: span.to_json() for name, span in self.completed_spans.items()
         }
