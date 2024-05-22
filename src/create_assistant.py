@@ -75,16 +75,39 @@ def main():
             os.path.dirname(__file__),
             "copilot_sdk_flow",
             "agent_arch",
+            "prompts",
+            "system_message.jinja2"
+        )
+    ) as f:
+        system_message = f.read()
+
+    with open(
+        os.path.join(
+            os.path.dirname(__file__),
+            "copilot_sdk_flow",
+            "agent_arch",
+            "prompts",
+            "data_schema.jinja2"
+        )
+    ) as f:
+        data_schema = f.read()
+
+    with open(
+        os.path.join(
+            os.path.dirname(__file__),
+            "copilot_sdk_flow",
+            "agent_arch",
             "extensions",
             "query_order_data.json",
         )
     ) as f:
         custom_function_spec = json.load(f)
+        custom_function_spec["description"] += "\n" + data_schema
 
     logging.info(f"Creating assistant...")
     assistant = client.beta.assistants.create(
         name="Contoso Sales Assistant",
-        instructions="You are a helpful data analytics assistant helping user answer questions about the contoso sales data.",
+        instructions=system_message,
         model=os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT"),
         tools=[
             {"type": "code_interpreter"},
