@@ -14,20 +14,24 @@ from agent_arch.messages import (
     ExtensionReturnMessage,
     StepNotification,
 )
+from agent_arch.event_log import EventLogger
 
 
 class Orchestrator:
-    def __init__(self, config: Configuration, client, session, extensions):
+    def __init__(
+        self, config: Configuration, client, session, extensions, event_logger
+    ):
         self.client = client
         self.config = config
         self.session = session
         self.extensions = extensions
+        self.event_logger = event_logger
 
         # getting the Assistant API specific constructs
         logging.info(
             f"Retrieving assistant with id: {config.AZURE_OPENAI_ASSISTANT_ID}"
         )
-        self.assistant = self.client.beta.assistants.retrieve(
+        self.assistant = trace(self.client.beta.assistants.retrieve)(
             self.config.AZURE_OPENAI_ASSISTANT_ID
         )
         self.thread = self.session.thread
@@ -40,15 +44,23 @@ class Orchestrator:
 
     @trace
     def run_loop(self):
+        # purge previous messages before run started
+        self._check_messages(skip=True)
+
         logging.info(f"Creating the run")
-        self.run = self.client.beta.threads.runs.create(
-            thread_id=self.thread.id, assistant_id=self.assistant.id
+        self.run = trace(self.client.beta.threads.runs.create)(
+            thread_id=self.thread.id,
+            assistant_id=self.assistant.id,
+            # max_completion_tokens=self.config.MAX_COMPLETION_TOKENS,
+            # max_prompt_tokens=self.config.MAX_PROMPT_TOKENS,
         )
         logging.info(f"Pre loop run status: {self.run.status}")
 
         start_time = time.time()
 
         # loop until max_waiting_time is reached
+        self.event_logger.end_span(EventLogger.TIME_TO_RUN_LOOP)
+        self.event_logger.start_span(EventLogger.TIME_TO_COMPLETE_RUN_LOOP)
         while (time.time() - start_time) < self.config.ORCHESTRATOR_MAX_WAITING_TIME:
             # checks the run regularly
             self.run = self.client.beta.threads.runs.retrieve(
@@ -59,31 +71,17 @@ class Orchestrator:
             )
 
             # check if a step has been completed
-            run_steps = self.client.beta.threads.runs.steps.list(
-                thread_id=self.thread.id, run_id=self.run.id, after=self.last_step_id
-            )
-            for step in run_steps:
-                logging.info(
-                    "The assistant has moved forward to step {}".format(step.id)
-                )
-                self.process_step(step)
-                self.last_step_id = step.id
+            # self._check_steps()
 
             # check if there are messages
-            for message in self.client.beta.threads.messages.list(
-                thread_id=self.thread.id, order="asc", after=self.last_message_id
-            ):
-                message = self.client.beta.threads.messages.retrieve(
-                    thread_id=self.thread.id, message_id=message.id
-                )
-                self.process_message(message)
-                # self.session.send(message)
-                self.last_message_id = message.id
+            self._check_messages()
 
             if self.run.status == "completed":
                 logging.info(f"Run completed.")
+                self.event_logger.end_span(EventLogger.TIME_TO_COMPLETE_RUN_LOOP)
                 return self.completed()
             elif self.run.status == "requires_action":
+                self.event_logger.end_span(EventLogger.TIME_TO_FIRST_EXTENSION_CALL)
                 logging.info(f"Run requires action.")
                 self.requires_action()
             elif self.run.status == "cancelled":
@@ -96,11 +94,33 @@ class Orchestrator:
                 )
             elif self.run.status in ["in_progress", "queued"]:
                 time.sleep(0.25)
+            elif self.run.status == "incomplete":
+                raise ValueError(
+                    f"Run incomplete: {self.run.status}, last_error: {self.run.last_error}"
+                )
             else:
                 raise ValueError(f"Unknown run status: {self.run.status}")
 
+    # @trace
+    def _check_messages(self, skip=False):
+        # check if there are messages
+        for message in self.client.beta.threads.messages.list(
+            thread_id=self.thread.id, order="asc", after=self.last_message_id
+        ):
+            if not skip:
+                message = trace(self.client.beta.threads.messages.retrieve)(
+                    thread_id=self.thread.id, message_id=message.id
+                )
+                self._process_message(message)
+            # self.session.send(message)
+            self.last_message_id = message.id
+
     @trace
-    def process_message(self, message):
+    def _process_message(self, message):
+        if message.content is None:
+            raise Exception("Message content is None")
+        if len(message.content) == 0:
+            raise Exception("Message content is empty []")
         for entry in message.content:
             if message.role == "user":
                 # this means a message we just added
@@ -117,22 +137,32 @@ class Orchestrator:
             else:
                 logging.critical("Unknown content type: {}".format(entry.type))
 
+    # @trace
+    def _check_steps(self):
+        """Check if there are new steps to process"""
+        run_steps = self.client.beta.threads.runs.steps.list(
+            thread_id=self.thread.id, run_id=self.run.id, after=self.last_step_id
+        )
+        for step in run_steps:
+            if step.status == "completed":
+                logging.info(
+                    "The assistant has moved forward to step {}".format(step.id)
+                )
+                self._process_completed_step(step)
+                self.last_step_id = step.id
+
     @trace
-    def process_step(self, step):
+    def _process_completed_step(self, step):
         """Process a step from the run"""
         if step.type == "tool_calls":
             for tool_call in step.step_details.tool_calls:
-                if tool_call.type == "code":
+                if tool_call.type == "code_interpreter":
                     self.session.send(
-                        StepNotification(
-                            type=step.type, content=str(tool_call.model_dump())
-                        )
+                        StepNotification(type=tool_call.type, content=tool_call)
                     )
                 elif tool_call.type == "function":
                     self.session.send(
-                        StepNotification(
-                            type=step.type, content=str(tool_call.model_dump())
-                        )
+                        StepNotification(type=tool_call.type, content=tool_call)
                     )
                 else:
                     logging.error(f"Unsupported tool call type: {tool_call.type}")
@@ -142,6 +172,8 @@ class Orchestrator:
     @trace
     def completed(self):
         """What to do when run.status == 'completed'"""
+        # self._check_steps()
+        self._check_messages()
         self.session.close()
 
     @trace
@@ -194,7 +226,7 @@ class Orchestrator:
 
         if tool_call_outputs:
             logging.info(f"Submitting tool outputs: {tool_call_outputs}")
-            _ = self.client.beta.threads.runs.submit_tool_outputs(
+            _ = trace(self.client.beta.threads.runs.submit_tool_outputs)(
                 thread_id=self.thread.id,
                 run_id=self.run.id,
                 tool_outputs=tool_call_outputs,

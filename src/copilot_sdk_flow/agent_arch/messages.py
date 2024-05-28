@@ -33,4 +33,4 @@ class ImageResponse(BaseModel):
 
 class StepNotification(BaseModel):
     type: str
-    content: str
+    content: Any

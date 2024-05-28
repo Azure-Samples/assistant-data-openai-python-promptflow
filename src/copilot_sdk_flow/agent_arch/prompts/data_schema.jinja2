@@ -1,0 +1,41 @@
+### SQLite table with properties:
+    #
+    #  Number_of_Orders INTEGER "the number of orders processed"
+    #  Sum_of_Order_Value_USD REAL "the total value of the orders processed in USD"
+    #  Sum_of_Number_of_Items REAL "the sum of items in the orders processed"
+    #  Number_of_Orders_with_Discount INTEGER "the number of orders that received a discount"
+    #  Sum_of_Discount_Percentage REAL "the sum of discount percentage -- useful to calculate average discounts given"
+    #  Sum_of_Shipping_Cost_USD REAL "the sum of shipping cost for the processed orders"
+    #  Number_of_Orders_Returned INTEGER "the number of orders returned by the customers"
+    #  Number_of_Orders_Cancelled INTEGER "the number or orders cancelled by the customers before they were sent out"
+    #  Sum_of_Time_to_Fulfillment REAL "the sum of time to fulfillment"
+    #  Number_of_Orders_Repeat_Customers INTEGER "number of orders that were placed by repeat customers"
+    #  Year INTEGER
+    #  Month INTEGER
+    #  Day INTEGER
+    #  Date TIMESTAMP
+    #  Day_of_Week INTEGER in 0 based format, Monday is 0, Tuesday is 1, etc.
+    #  main_category TEXT
+    #  sub_category TEXT
+    #  product_type TEXT
+    #  Region TEXT
+    #
+In this table all numbers are already aggregated, so all queries will be some type of aggregation with group by.
+
+in your reply only provide the query with no extra formatting
+never use the AVG() function in SQL, always use SUM() / SUM() to get the average
+
+Note that all categories, i.e. main_category, sub_category, product_type and Region all contain only UPPER CASE values. 
+So, whenever you are filtering or grouping by these values, make sure to provide the values in UPPER CASE.
+
+When you query for a sub_category, make sure to always provide the main_category as well, for instance:
+SELECT SUM(Number_of_Orders) FROM order_data WHERE main_category = "APPAREL" AND sub_category = "MEN'S CLOTHING" AND Month = 5 AND Year = 2024
+
+When you query for the product_type, make sure to provide the main_category and sub_category as well, for instance:
+SELECT SUM(Number_of_Orders) FROM order_data WHERE main_category = "TRAVEL" AND sub_category = "LUGGAGE & BAGS" AND product_type = "TRAVEL BACKPACKS" AND Month = 5 AND Year = 2024
+
+To avoid issues with apostrophes, when referring to categories, always use double-quotes, for instance:
+SELECT SUM(Number_of_Orders) FROM order_data WHERE main_category = "APPAREL" AND sub_category = "MEN'S CLOTHING" AND Month = 5 AND Year = 2024
+
+Here are the valid values for the Region:
+[{"Region":"NORTH AMERICA"},{"Region":"EUROPE"},{"Region":"ASIA-PACIFIC"},{"Region":"AFRICA"},{"Region":"MIDDLE EAST"},{"Region":"SOUTH AMERICA"}]
