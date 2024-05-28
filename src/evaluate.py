@@ -138,8 +138,6 @@ def run_evaluation(
                 "question": "${data.chat_input}",
                 "answer": "${target.reply}",
             }
-        elif metric_name == "latency":
-            raise NotImplementedError("Latency metric is not implemented yet")
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -201,7 +199,6 @@ def main():
             "qa",
             "chat",
             "content_safety",
-            "latency",
         ],
         required=True,
     )

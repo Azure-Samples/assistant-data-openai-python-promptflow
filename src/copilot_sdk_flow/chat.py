@@ -32,7 +32,7 @@ def chat_completion(
 
     # a couple basic checks
     if not messages:
-        return {"error": "No messages provided."}
+        raise ValueError("No messages provided.")
 
     # loads the system config from the environment variables
     # with overrides from the context
