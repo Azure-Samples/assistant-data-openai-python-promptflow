@@ -4,6 +4,7 @@ param environmentName = readEnvironmentVariable('AZURE_ENV_NAME', 'MY_ENV')
 param resourceGroupName = readEnvironmentVariable('AZURE_RESOURCE_GROUP', '')
 param location = readEnvironmentVariable('AZURE_LOCATION', 'eastus2')
 param principalId = readEnvironmentVariable('AZURE_PRINCIPAL_ID', '')
+param principalType = readEnvironmentVariable('AZURE_PRINCIPAL_TYPE', 'User')
 
 param aiHubName = readEnvironmentVariable('AZUREAI_HUB_NAME', '')
 param aiProjectName = readEnvironmentVariable('AZUREAI_PROJECT_NAME', '')
