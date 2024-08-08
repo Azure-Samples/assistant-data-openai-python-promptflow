@@ -17,6 +17,7 @@ from promptflow.evals.evaluators import (
     QAEvaluator,
     # ChatEvaluator,
 )
+from promptflow.evals.evaluators import ContentSafetyEvaluator
 from tabulate import tabulate
 
 # local imports
@@ -54,6 +55,15 @@ def get_model_config(evaluation_endpoint, evaluation_model):
         )
 
     return model_config
+
+
+def get_project_scope():
+    """Return refs to project using env vars."""
+    return {
+        "subscription_id": os.getenv("AZURE_SUBSCRIPTION_ID"),
+        "resource_group_name": os.getenv("AZURE_RESOURCE_GROUP"),
+        "project_name": os.getenv("AZUREAI_PROJECT_NAME"),
+    }
 
 
 def run_evaluation(
@@ -120,8 +130,14 @@ def run_evaluation(
                 "context": "${target.context}",
                 "ground_truth": "${data.ground_truth}",
             }
-        elif metric_name == "latency":
-            raise NotImplementedError("Latency metric is not implemented yet")
+        elif metric_name == "content_safety":
+            evaluators[metric_name] = ContentSafetyEvaluator(
+                project_scope=get_project_scope()
+            )
+            evaluators_config[metric_name] = {
+                "question": "${data.chat_input}",
+                "answer": "${target.reply}",
+            }
         else:
             raise ValueError(f"Unknown metric: {metric_name}")
 
@@ -135,6 +151,7 @@ def run_evaluation(
         evaluators=evaluators,
         evaluator_config=evaluators_config,
         data=evaluation_data_path,
+        output_path=output_path,
     )
 
     tabular_result = pd.DataFrame(result.get("rows"))
@@ -181,9 +198,15 @@ def main():
             "similarity",
             "qa",
             "chat",
-            "latency",
+            "content_safety",
         ],
         required=True,
+    )
+    parser.add_argument(
+        "--output-data",
+        type=str,
+        required=False,
+        help="Path to output data file (metrics and tabular result)",
     )
     args = parser.parse_args()
 
@@ -211,6 +234,7 @@ def main():
         evaluation_model_config=eval_model_config,
         evaluation_data_path=args.evaluation_data_path,
         metrics=args.metrics,
+        output_path=args.output_data,
     )
 
     print("-----Summarized Metrics-----")
