@@ -40,6 +40,8 @@ param logAnalyticsWorkspaceName string = ''
 param endpointName string = ''
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
+@description('Type of the principal. Valid values: User,ServicePrincipal')
+param principalType string = 'User'
 @description('The name of the azd service to use for the machine learning endpoint')
 param endpointServiceName string = 'chat'
 
@@ -139,7 +141,7 @@ module userAcrRolePush 'core/security/role.bicep' = {
   params: {
     principalId: principalId
     roleDefinitionId: '8311e382-0749-4cb8-b61a-304f252e45ec'
-    principalType: 'User'
+    principalType: principalType
   }
 }
 
@@ -149,7 +151,7 @@ module userAcrRolePull 'core/security/role.bicep' = {
   params: {
     principalId: principalId
     roleDefinitionId: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-    principalType: 'User'
+    principalType: principalType
   }
 }
 
@@ -159,7 +161,7 @@ module userRoleDataScientist 'core/security/role.bicep' = {
   params: {
     principalId: principalId
     roleDefinitionId: 'f6c7c914-8db3-469d-8ca1-694a8f32e121'
-    principalType: 'User'
+    principalType: principalType
   }
 }
 
@@ -169,7 +171,7 @@ module userRoleSecretsReader 'core/security/role.bicep' = {
   params: {
     principalId: principalId
     roleDefinitionId: 'ea01e6af-a1c1-4350-9563-ad00f8c72ec5'
-    principalType: 'User'
+    principalType: principalType
   }
 }
 
@@ -179,7 +181,7 @@ module userCognitiveServicesOpenAIContributor 'core/security/role.bicep' = {
   params: {
     principalId: principalId
     roleDefinitionId: 'a001fd3d-188f-4b5d-821b-7da978bf7442'
-    principalType: 'User'
+    principalType: principalType
   }
 }
 
